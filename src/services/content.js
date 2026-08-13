@@ -1,112 +1,187 @@
 import {
-  collection,
+  doc,
+  getDoc,
   getDocs,
-  query,
-  where,
+  collection,
 } from "firebase/firestore";
 import { db, firebaseConfigured } from "../lib/firebase";
 
-const demoSubjects = [
+const DEMO_SUBJECTS = [
   {
     id: "demo-portugues",
     name: "Português",
-    cards: 0,
     topics: ["Morfologia", "Sintaxe", "Interpretação de Texto"],
     levels: [],
+    curricula: [],
     color: "blue",
   },
 ];
 
+const LEVEL_LABELS = {
+  fundamental: "Ensino Fundamental",
+  medio: "Ensino Médio",
+  faculdade: "Faculdade",
+  concurso: "Concurso",
+  tecnico: "Técnico",
+};
+
 const text = (value, fallback = "") =>
-  value === undefined || value === null || String(value).trim() === ""
+  value === undefined ||
+  value === null ||
+  String(value).trim() === ""
     ? fallback
     : String(value).trim();
 
-const unique = (items) => [...new Set(items.filter(Boolean))];
+function normalizeText(value = "") {
+  return String(value)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\w\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+async function shortHash(value, length = 16) {
+  const encoded = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-1", encoded);
+
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, length);
+}
+
+async function curriculumId(subject, level) {
+  return shortHash(
+    `${normalizeText(subject)}|${String(level).trim().toLowerCase()}`,
+  );
+}
 
 function normalizeLevel(level) {
+  const normalized = text(level?.level).toLowerCase();
+
   return {
-    level: text(level?.level),
-    label: text(level?.label, text(level?.level, "Nível")),
+    level: normalized,
+    label:
+      text(level?.label) ||
+      LEVEL_LABELS[normalized] ||
+      normalized ||
+      "Nível",
     priority: Number(level?.priority ?? 999),
+  };
+}
+
+function normalizeCurriculum(snapshot) {
+  const data = snapshot.data();
+
+  const categories = Array.isArray(data.categories)
+    ? data.categories.map((category) => ({
+        category: text(category?.category, "Geral"),
+        topics: Array.isArray(category?.topics)
+          ? category.topics.map((topic) => text(topic)).filter(Boolean)
+          : [],
+      }))
+    : [];
+
+  return {
+    id: snapshot.id,
+    subject: text(data.subject),
+    level: text(data.level).toLowerCase(),
+    categories,
+    totalTopics:
+      Number(data.totalTopics) ||
+      categories.reduce(
+        (total, category) => total + category.topics.length,
+        0,
+      ),
+    updatedAt: data.updatedAt || null,
   };
 }
 
 function normalizeCard(raw, bucket) {
   return {
     ...raw,
-    id: text(raw?.id, `${bucket.id}-${Math.random().toString(36).slice(2)}`),
-    front: text(raw?.front, text(raw?.question, text(raw?.pergunta))),
-    back: text(raw?.back, text(raw?.answer, text(raw?.resposta))),
-    explanation: text(raw?.explanation, text(raw?.explicacao)),
-    curiosity: text(raw?.curiosity, text(raw?.curiosidade)),
-    subject: text(raw?.subject, bucket.subject),
+    id: text(
+      raw?.id,
+      `${bucket.id}-${Math.random().toString(36).slice(2)}`,
+    ),
+    front: text(
+      raw?.front,
+      text(raw?.question, text(raw?.pergunta)),
+    ),
+    back: text(
+      raw?.back,
+      text(raw?.answer, text(raw?.resposta)),
+    ),
+    explanation: text(
+      raw?.explanation,
+      text(raw?.explicacao),
+    ),
     topic: text(raw?.topic, bucket.topic),
     difficulty: text(raw?.difficulty, "medium"),
-    level: text(raw?.level, bucket.level),
-    cardType: text(raw?.cardType, bucket.cardType),
+    subject: bucket.subject,
+    level: bucket.level,
+    cardType: bucket.cardType,
+    bucketId: bucket.id,
   };
 }
 
-async function fetchCurriculaForSubject(subjectDoc) {
-  const levels = (Array.isArray(subjectDoc.levels) ? subjectDoc.levels : [])
-    .map(normalizeLevel)
-    .filter((level) => level.level);
+export async function getSubjects() {
+  if (!firebaseConfigured || !db) {
+    return DEMO_SUBJECTS;
+  }
 
-  const results = await Promise.all(
-    levels.map(async (level) => {
-      const q = query(
-        collection(db, "curricula"),
-        where("subject", "==", subjectDoc.subject),
-        where("level", "==", level.level),
-      );
-
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        level: level.level,
-      }));
-    }),
+  const snapshot = await getDocs(
+    collection(db, "subjects"),
   );
 
-  return results.flat();
-}
-
-export async function getSubjects() {
-  if (!firebaseConfigured || !db) return demoSubjects;
-
-  const snapshot = await getDocs(collection(db, "subjects"));
-
   const subjects = await Promise.all(
-    snapshot.docs.map(async (doc) => {
-      const data = doc.data();
-      const levels = (Array.isArray(data.levels) ? data.levels : [])
+    snapshot.docs.map(async (subjectDoc) => {
+      const data = subjectDoc.data();
+
+      const levels = (
+        Array.isArray(data.levels) ? data.levels : []
+      )
         .map(normalizeLevel)
+        .filter((level) => level.level)
         .sort((a, b) => a.priority - b.priority);
 
-      const curricula = await fetchCurriculaForSubject({
-        subject: text(data.subject, doc.id),
-        levels,
-      });
+      const curricula = await Promise.all(
+        levels.map(async (level) => {
+          const id = await curriculumId(
+            text(data.subject, subjectDoc.id),
+            level.level,
+          );
 
-      const topics = unique(
-        curricula.flatMap((curriculum) =>
-          Array.isArray(curriculum.categories)
-            ? curriculum.categories.flatMap((category) =>
-                Array.isArray(category.topics) ? category.topics : [],
-              )
-            : [],
-        ),
+          const curriculumSnapshot = await getDoc(
+            doc(db, "curricula", id),
+          );
+
+          return curriculumSnapshot.exists()
+            ? normalizeCurriculum(curriculumSnapshot)
+            : null;
+        }),
       );
 
+      const validCurricula = curricula.filter(Boolean);
+
+      const topics = [
+        ...new Set(
+          validCurricula.flatMap((curriculum) =>
+            curriculum.categories.flatMap(
+              (category) => category.topics,
+            ),
+          ),
+        ),
+      ];
+
       return {
-        id: doc.id,
-        name: text(data.subject, doc.id),
-        cards: 0,
+        id: subjectDoc.id,
+        name: text(data.subject, subjectDoc.id),
         topics,
         levels,
-        curricula,
+        curricula: validCurricula,
         color: "blue",
       };
     }),
@@ -115,77 +190,108 @@ export async function getSubjects() {
   return subjects;
 }
 
-/**
- * Lê somente cardBuckets oficiais do schema do MemoriaFlash.
- *
- * O backend usa:
- * cardBuckets/{hash(subject|topic|level|cardType)}
- *
- * No cliente não precisamos reproduzir o hash: consultamos os campos
- * indexados do documento, evitando duplicar a implementação de SHA-1.
- */
-export async function getCards(filters = {}) {
-  if (!firebaseConfigured || !db) return [];
-
-  const constraints = [where("cardType", "==", filters.cardType || "definition")];
-
-  if (filters.subject) {
-    constraints.push(where("subject", "==", filters.subject));
+export async function getCurriculum(subject, level) {
+  if (!firebaseConfigured || !db || !subject || !level) {
+    return null;
   }
 
-  if (filters.topic) {
-    constraints.push(where("topic", "==", filters.topic));
-  }
+  const id = await curriculumId(subject, level);
 
-  if (filters.level) {
-    constraints.push(where("level", "==", filters.level));
-  }
+  const snapshot = await getDoc(
+    doc(db, "curricula", id),
+  );
 
-  const q = query(collection(db, "cardBuckets"), ...constraints);
-  const snapshot = await getDocs(q);
-  const cards = [];
-
-  snapshot.docs.forEach((doc) => {
-    const data = doc.data();
-
-    if (!Array.isArray(data.cards)) return;
-
-    data.cards.forEach((raw) => {
-      const card = normalizeCard(raw, {
-        id: doc.id,
-        subject: data.subject,
-        topic: data.topic,
-        level: data.level,
-        cardType: data.cardType,
-      });
-
-      if (filters.subject && card.subject !== filters.subject) return;
-      if (filters.topic && card.topic !== filters.topic) return;
-      if (filters.level && card.level !== filters.level) return;
-
-      cards.push(card);
-    });
-  });
-
-  return cards;
+  return snapshot.exists()
+    ? normalizeCurriculum(snapshot)
+    : null;
 }
 
-export async function loadContent(filters = {}) {
-  const subjects = await getSubjects();
+/**
+ * Busca um cardBucket oficial.
+ *
+ * O ID do bucket é determinístico no backend:
+ * sha1(subject|topic|level|cardType)
+ *
+ * Reproduzimos o mesmo cálculo no navegador para fazer 1 read
+ * direto no documento, evitando consultas compostas e índices extras.
+ */
+export async function getCards({
+  subject,
+  topic,
+  level,
+  cardType = "definition",
+} = {}) {
+  if (!firebaseConfigured || !db) {
+    return [];
+  }
 
-  // Não baixa o banco inteiro ao abrir o site.
-  // Cards são carregados somente quando o usuário inicia uma sessão.
-  const cards = filters.subject || filters.topic || filters.level
-    ? await getCards(filters)
+  if (!subject || !topic || !level) {
+    return [];
+  }
+
+  const id = await shortHash(
+    `${normalizeText(subject)}|${normalizeText(topic)}|${String(level).trim().toLowerCase()}|${cardType}`,
+  );
+
+  const snapshot = await getDoc(
+    doc(db, "cardBuckets", id),
+  );
+
+  if (!snapshot.exists()) {
+    return [];
+  }
+
+  const data = snapshot.data();
+
+  const bucket = {
+    id: snapshot.id,
+    subject: text(data.subject, subject),
+    topic: text(data.topic, topic),
+    level: text(data.level, level).toLowerCase(),
+    cardType: text(data.cardType, cardType),
+  };
+
+  return Array.isArray(data.cards)
+    ? data.cards.map((card) =>
+        normalizeCard(card || {}, bucket),
+      )
+    : [];
+}
+
+export async function getStudyContent({
+  subject,
+  level,
+  topic,
+  cardType = "definition",
+} = {}) {
+  const curriculum = await getCurriculum(
+    subject,
+    level,
+  );
+
+  const cards = topic
+    ? await getCards({
+        subject,
+        topic,
+        level,
+        cardType,
+      })
     : [];
 
   return {
-    subjects,
+    curriculum,
     cards,
-    source: firebaseConfigured ? "firebase" : "demo",
   };
 }
 
-export async function getStudyContent(filters = {}) {
-  return loadContent(filters);
+export async function loadContent() {
+  const subjects = await getSubjects();
+
+  return {
+    subjects,
+    cards: [],
+    source: firebaseConfigured
+      ? "firebase"
+      : "demo",
+  };
 }

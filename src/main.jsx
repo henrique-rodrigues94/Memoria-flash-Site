@@ -5,8 +5,19 @@ import {
   Search, Settings, Sparkles, ThumbsDown, ThumbsUp, TrendingUp,
   LogIn, LogOut
 } from "lucide-react";
-import { onAuthStateChanged, signInWithPopup, signOut, GoogleAuthProvider } from "firebase/auth";
-import { auth, firebaseConfigured } from "./lib/firebase";
+import {
+  onAuthStateChanged,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  signOut,
+  GoogleAuthProvider,
+} from "firebase/auth";
+import {
+  auth,
+  firebaseConfigured,
+  authPersistenceReady,
+} from "./lib/firebase";
 import { loadContent } from "./services/content";
 import { saveCardFeedback } from "./services/feedback";
 import { saveCardProgress } from "./services/progress";
@@ -14,10 +25,37 @@ import "./styles.css";
 
 const REASONS = ["Pergunta confusa","Resposta incorreta","Explicação ruim","Muito fácil","Muito difícil","Conteúdo repetido","Desatualizado"];
 
+function authErrorMessage(error) {
+  const code = error?.code || "";
+
+  if (code.includes("popup-blocked")) {
+    return "O navegador bloqueou a janela do Google. Vamos tentar o login por redirecionamento.";
+  }
+  if (code.includes("popup-closed-by-user")) {
+    return "A janela de login foi fechada antes de concluir.";
+  }
+  if (code.includes("unauthorized-domain")) {
+    return "Este domínio ainda não está autorizado no Firebase Authentication.";
+  }
+  if (code.includes("operation-not-allowed")) {
+    return "O login com Google não está ativado no Firebase Authentication.";
+  }
+  if (code.includes("api-key-not-valid")) {
+    return "A configuração do Firebase no .env está inválida.";
+  }
+  if (code.includes("network-request-failed")) {
+    return "Falha de conexão. Verifique a internet e tente novamente.";
+  }
+  return error?.message || "Não foi possível entrar com o Google.";
+}
+
 function App() {
   const [tab, setTab] = useState("home");
   const [query, setQuery] = useState("");
   const [user, setUser] = useState(null);
+  const [authReady, setAuthReady] = useState(!auth);
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authError, setAuthError] = useState("");
   const [content, setContent] = useState({ subjects: [], cards: [], source: "loading" });
   const [loading, setLoading] = useState(true);
   const [studyLoading, setStudyLoading] = useState(false);
@@ -30,8 +68,33 @@ function App() {
   const [feedbackStatus, setFeedbackStatus] = useState("");
 
   useEffect(() => {
-    if (!auth) return;
-    return onAuthStateChanged(auth, setUser);
+    if (!auth) {
+      setAuthReady(true);
+      return undefined;
+    }
+
+    let active = true;
+
+    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+      if (!active) return;
+      setUser(nextUser);
+      setAuthReady(true);
+      setAuthBusy(false);
+    });
+
+    // Se o Google redirecionou de volta para o site, consome o resultado.
+    getRedirectResult(auth).catch((error) => {
+      if (!active) return;
+      if (error?.code !== "auth/no-auth-event") {
+        setAuthError(authErrorMessage(error));
+      }
+      setAuthBusy(false);
+    });
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -108,8 +171,58 @@ function App() {
   }
 
   async function login() {
-    if (!auth) return;
-    await signInWithPopup(auth, new GoogleAuthProvider());
+    if (!auth || !firebaseConfigured || authBusy) return;
+
+    setAuthBusy(true);
+    setAuthError("");
+
+    try {
+      // Aguarda a persistência antes do popup para evitar corrida entre
+      // inicialização do Auth e criação da sessão.
+      await authPersistenceReady;
+
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+
+      await signInWithPopup(auth, provider);
+      // onAuthStateChanged encerra o estado de loading.
+    } catch (error) {
+      const code = error?.code || "";
+
+      // Popup bloqueado/indisponível: usa redirect, que funciona melhor
+      // em ambientes incorporados e alguns navegadores com bloqueio de popup.
+      if (
+        code.includes("popup-blocked") ||
+        code.includes("popup-failed") ||
+        code.includes("operation-not-supported-in-this-environment")
+      ) {
+        try {
+          const provider = new GoogleAuthProvider();
+          provider.setCustomParameters({ prompt: "select_account" });
+          await signInWithRedirect(auth, provider);
+          return;
+        } catch (redirectError) {
+          setAuthError(authErrorMessage(redirectError));
+        }
+      } else {
+        setAuthError(authErrorMessage(error));
+      }
+
+      setAuthBusy(false);
+    }
+  }
+
+  async function logout() {
+    if (!auth || authBusy) return;
+    setAuthBusy(true);
+    setAuthError("");
+    try {
+      await signOut(auth);
+    } catch (error) {
+      setAuthError(authErrorMessage(error));
+    } finally {
+      setAuthBusy(false);
+    }
   }
 
   if (loading) return <div className="loading-state"><span className="spinner" /> Carregando MemoriaFlash...</div>;
@@ -131,10 +244,14 @@ function App() {
           <div className="streak-card"><div className="streak-icon"><Flame size={18}/></div><div><strong>Seu estudo</strong><span>{user ? user.displayName || "Conta conectada" : "Modo visitante"}</span></div></div>
           <button className="nav-item"><Settings size={19}/> Configurações</button>
           {user ? (
-            <button className="nav-item" onClick={() => signOut(auth)}><LogOut size={19}/> Sair</button>
+            <button className="nav-item" onClick={logout} disabled={authBusy}><LogOut size={19}/> {authBusy ? "Saindo..." : "Sair"}</button>
           ) : (
-            <button className="nav-item" onClick={login} disabled={!firebaseConfigured}><LogIn size={19}/> Entrar com Google</button>
+            <button className="nav-item" onClick={login} disabled={!firebaseConfigured || !authReady || authBusy}>
+              <LogIn size={19}/>
+              {!firebaseConfigured ? "Firebase não configurado" : !authReady ? "Verificando sessão..." : authBusy ? "Entrando..." : "Entrar com Google"}
+            </button>
           )}
+          {authError && <small className="feedback-status">{authError}</small>}
         </div>
       </aside>
 

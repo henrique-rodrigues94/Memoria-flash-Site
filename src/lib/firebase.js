@@ -1,6 +1,10 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeApp } from "firebase/app";
+import {
+  getAuth,
+  setPersistence,
+  browserLocalPersistence,
+} from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -19,3 +23,15 @@ const app = hasConfig ? initializeApp(firebaseConfig) : null;
 
 export const auth = app ? getAuth(app) : null;
 export const db = app ? getFirestore(app) : null;
+
+// Mantém a sessão entre recargas e abas.
+// O app aguarda esta Promise antes de iniciar o fluxo de login.
+export const authPersistenceReady = auth
+  ? setPersistence(auth, browserLocalPersistence).catch((error) => {
+      console.warn(
+        "[Firebase Auth] Não foi possível ativar persistência local:",
+        error,
+      );
+      return null;
+    })
+  : Promise.resolve(null);
