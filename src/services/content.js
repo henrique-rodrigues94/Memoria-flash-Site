@@ -284,12 +284,25 @@ export async function getStudyContent({
   };
 }
 
-export async function loadContent() {
+/**
+ * Carrega o conteúdo para a Home/Biblioteca e, opcionalmente, os cards de
+ * uma seleção específica (subject + topic + level) para iniciar o estudo.
+ *
+ * Antes, esta função ignorava os filtros e sempre retornava `cards: []`,
+ * então o botão "Estudar" nunca trazia cards reais do Firebase. Agora ela
+ * busca o mesmo cardBucket que o aplicativo mobile usa.
+ */
+export async function loadContent({ subject, topic, level, cardType = "definition" } = {}) {
   const subjects = await getSubjects();
+
+  let cards = [];
+  if (subject && topic && level) {
+    cards = await getCards({ subject, topic, level, cardType });
+  }
 
   return {
     subjects,
-    cards: [],
+    cards,
     source: firebaseConfigured
       ? "firebase"
       : "demo",
