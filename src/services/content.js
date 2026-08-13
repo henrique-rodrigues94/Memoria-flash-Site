@@ -1,72 +1,191 @@
-import { collection, getDocs } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 import { db, firebaseConfigured } from "../lib/firebase";
 
-const fallbackSubjects = [
-  { id: "portugues", name: "Português", cards: 4283, progress: 0, color: "violet", topics: ["Morfologia", "Sintaxe", "Interpretação de Texto"] },
-  { id: "direito-constitucional", name: "Direito Constitucional", cards: 2187, progress: 0, color: "blue", topics: ["Direitos Fundamentais", "Organização do Estado", "Controle de Constitucionalidade"] },
-  { id: "informatica", name: "Informática", cards: 3124, progress: 0, color: "cyan", topics: ["Redes", "Segurança da Informação", "Sistemas Operacionais"] },
-  { id: "criminalistica", name: "Criminalística", cards: 1482, progress: 0, color: "orange", topics: ["Local de Crime", "Vestígios", "Cadeia de Custódia"] },
+const demoSubjects = [
+  {
+    id: "demo-portugues",
+    name: "Português",
+    cards: 0,
+    topics: ["Morfologia", "Sintaxe", "Interpretação de Texto"],
+    levels: [],
+    color: "blue",
+  },
 ];
 
-const fallbackCards = [
-  { id: "pt-001", subject: "Português", topic: "Morfologia", difficulty: "medium", front: "Qual é a função principal de um substantivo na língua portuguesa?", back: "Nomear seres, objetos, lugares, sentimentos, ações ou conceitos.", explanation: "O substantivo funciona como núcleo de grupos nominais e pode designar entidades concretas ou abstratas.", curiosity: "Substantivos abstratos podem nomear sentimentos e qualidades." },
-  { id: "pt-002", subject: "Português", topic: "Sintaxe", difficulty: "hard", front: "Na frase “Os alunos estudaram para a prova”, qual é o sujeito?", back: "“Os alunos”.", explanation: "O sujeito é o termo sobre o qual se declara algo.", curiosity: "A concordância verbal ajuda a identificar o sujeito." },
-  { id: "dc-001", subject: "Direito Constitucional", topic: "Direitos Fundamentais", difficulty: "medium", front: "Qual princípio garante que ninguém será obrigado a fazer ou deixar de fazer algo senão em virtude de lei?", back: "O princípio da legalidade.", explanation: "A legalidade exige fundamento legal para obrigações impostas aos particulares.", curiosity: "A Constituição prevê a legalidade no artigo 5º, inciso II." },
-];
+const text = (value, fallback = "") =>
+  value === undefined || value === null || String(value).trim() === ""
+    ? fallback
+    : String(value).trim();
 
-function firstDefined(obj, keys, fallback = "") {
-  for (const key of keys) if (obj?.[key] != null && obj[key] !== "") return obj[key];
-  return fallback;
+const unique = (items) => [...new Set(items.filter(Boolean))];
+
+function normalizeLevel(level) {
+  return {
+    level: text(level?.level),
+    label: text(level?.label, text(level?.level, "Nível")),
+    priority: Number(level?.priority ?? 999),
+  };
 }
 
-export async function loadContent() {
-  if (!firebaseConfigured || !db) return { subjects: fallbackSubjects, cards: fallbackCards, source: "demo" };
+function normalizeCard(raw, bucket) {
+  return {
+    ...raw,
+    id: text(raw?.id, `${bucket.id}-${Math.random().toString(36).slice(2)}`),
+    front: text(raw?.front, text(raw?.question, text(raw?.pergunta))),
+    back: text(raw?.back, text(raw?.answer, text(raw?.resposta))),
+    explanation: text(raw?.explanation, text(raw?.explicacao)),
+    curiosity: text(raw?.curiosity, text(raw?.curiosidade)),
+    subject: text(raw?.subject, bucket.subject),
+    topic: text(raw?.topic, bucket.topic),
+    difficulty: text(raw?.difficulty, "medium"),
+    level: text(raw?.level, bucket.level),
+    cardType: text(raw?.cardType, bucket.cardType),
+  };
+}
 
-  try {
-    const [subjectsSnap, bucketsSnap] = await Promise.all([
-      getDocs(collection(db, "subjects")),
-      getDocs(collection(db, "cardBuckets")),
-    ]);
+async function fetchCurriculaForSubject(subjectDoc) {
+  const levels = (Array.isArray(subjectDoc.levels) ? subjectDoc.levels : [])
+    .map(normalizeLevel)
+    .filter((level) => level.level);
 
-    const subjects = subjectsSnap.docs.map((doc) => {
+  const results = await Promise.all(
+    levels.map(async (level) => {
+      const q = query(
+        collection(db, "curricula"),
+        where("subject", "==", subjectDoc.subject),
+        where("level", "==", level.level),
+      );
+
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        level: level.level,
+      }));
+    }),
+  );
+
+  return results.flat();
+}
+
+export async function getSubjects() {
+  if (!firebaseConfigured || !db) return demoSubjects;
+
+  const snapshot = await getDocs(collection(db, "subjects"));
+
+  const subjects = await Promise.all(
+    snapshot.docs.map(async (doc) => {
       const data = doc.data();
-      const topics = firstDefined(data, ["topics", "topicos"], []);
+      const levels = (Array.isArray(data.levels) ? data.levels : [])
+        .map(normalizeLevel)
+        .sort((a, b) => a.priority - b.priority);
+
+      const curricula = await fetchCurriculaForSubject({
+        subject: text(data.subject, doc.id),
+        levels,
+      });
+
+      const topics = unique(
+        curricula.flatMap((curriculum) =>
+          Array.isArray(curriculum.categories)
+            ? curriculum.categories.flatMap((category) =>
+                Array.isArray(category.topics) ? category.topics : [],
+              )
+            : [],
+        ),
+      );
+
       return {
         id: doc.id,
-        name: firstDefined(data, ["name", "nome", "title", "titulo"], doc.id),
-        cards: Number(firstDefined(data, ["cardCount", "cardsCount", "cards"], 0)) || 0,
-        progress: 0,
-        color: firstDefined(data, ["color", "cor"], "violet"),
-        topics: Array.isArray(topics)
-          ? topics.map((t) => typeof t === "string" ? t : firstDefined(t, ["name", "nome", "title", "titulo"], "Tópico"))
-          : [],
+        name: text(data.subject, doc.id),
+        cards: 0,
+        topics,
+        levels,
+        curricula,
+        color: "blue",
       };
-    });
+    }),
+  );
 
-    const cards = [];
-    bucketsSnap.docs.forEach((bucketDoc) => {
-      const bucket = bucketDoc.data();
-      const list = Array.isArray(bucket.cards) ? bucket.cards : [];
-      list.forEach((raw, index) => {
-        const card = raw || {};
-        cards.push({
-          ...card,
-          id: card.id || `${bucketDoc.id}-${index}`,
-          subject: firstDefined(card, ["subject", "materia", "subjectName"], firstDefined(bucket, ["subject", "materia"], "")),
-          topic: firstDefined(card, ["topic", "topico", "topicName"], firstDefined(bucket, ["topic", "topico"], "")),
-          front: firstDefined(card, ["front", "question", "pergunta"], ""),
-          back: firstDefined(card, ["back", "answer", "resposta"], ""),
-          explanation: firstDefined(card, ["explanation", "explicacao"], ""),
-          curiosity: firstDefined(card, ["curiosity", "curiosidade"], ""),
-          difficulty: firstDefined(card, ["difficulty", "dificuldade"], "medium"),
-        });
-      });
-    });
+  return subjects;
+}
 
-    if (!subjects.length && !cards.length) return { subjects: fallbackSubjects, cards: fallbackCards, source: "empty-firebase" };
-    return { subjects: subjects.length ? subjects : fallbackSubjects, cards: cards.length ? cards : fallbackCards, source: "firebase" };
-  } catch (error) {
-    console.error("MemoriaFlash: falha ao carregar conteúdo", error);
-    return { subjects: fallbackSubjects, cards: fallbackCards, source: "fallback-error" };
+/**
+ * Lê somente cardBuckets oficiais do schema do MemoriaFlash.
+ *
+ * O backend usa:
+ * cardBuckets/{hash(subject|topic|level|cardType)}
+ *
+ * No cliente não precisamos reproduzir o hash: consultamos os campos
+ * indexados do documento, evitando duplicar a implementação de SHA-1.
+ */
+export async function getCards(filters = {}) {
+  if (!firebaseConfigured || !db) return [];
+
+  const constraints = [where("cardType", "==", filters.cardType || "definition")];
+
+  if (filters.subject) {
+    constraints.push(where("subject", "==", filters.subject));
   }
+
+  if (filters.topic) {
+    constraints.push(where("topic", "==", filters.topic));
+  }
+
+  if (filters.level) {
+    constraints.push(where("level", "==", filters.level));
+  }
+
+  const q = query(collection(db, "cardBuckets"), ...constraints);
+  const snapshot = await getDocs(q);
+  const cards = [];
+
+  snapshot.docs.forEach((doc) => {
+    const data = doc.data();
+
+    if (!Array.isArray(data.cards)) return;
+
+    data.cards.forEach((raw) => {
+      const card = normalizeCard(raw, {
+        id: doc.id,
+        subject: data.subject,
+        topic: data.topic,
+        level: data.level,
+        cardType: data.cardType,
+      });
+
+      if (filters.subject && card.subject !== filters.subject) return;
+      if (filters.topic && card.topic !== filters.topic) return;
+      if (filters.level && card.level !== filters.level) return;
+
+      cards.push(card);
+    });
+  });
+
+  return cards;
+}
+
+export async function loadContent(filters = {}) {
+  const subjects = await getSubjects();
+
+  // Não baixa o banco inteiro ao abrir o site.
+  // Cards são carregados somente quando o usuário inicia uma sessão.
+  const cards = filters.subject || filters.topic || filters.level
+    ? await getCards(filters)
+    : [];
+
+  return {
+    subjects,
+    cards,
+    source: firebaseConfigured ? "firebase" : "demo",
+  };
+}
+
+export async function getStudyContent(filters = {}) {
+  return loadContent(filters);
 }
