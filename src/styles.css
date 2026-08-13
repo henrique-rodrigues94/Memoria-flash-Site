@@ -198,3 +198,186 @@ nav { display: grid; gap: 6px; }
 .empty-state h3 { margin: 0; color: var(--ink); }
 .feedback-status { display: block; margin-top: 8px; color: var(--muted); font-size: 12px; }
 .topic-pills span { display: inline-block; }
+
+/* =========================================================
+   TELA DE LOGIN - MEMORIAFLASH
+   ========================================================= */
+
+.login-screen {
+  min-height: 100vh;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  padding: 32px 20px;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(109, 93, 252, 0.14), transparent 34%),
+    radial-gradient(circle at 85% 90%, rgba(78, 125, 244, 0.10), transparent 34%),
+    #f4f5fb;
+}
+
+.login-card {
+  width: min(460px, 100%);
+  padding: 38px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: 0 24px 70px rgba(25, 27, 46, 0.12);
+  text-align: center;
+}
+
+.login-brand {
+  justify-content: center;
+  padding: 0 0 28px;
+}
+
+.login-brand .brand-mark {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+}
+
+.login-brand strong {
+  color: var(--ink);
+  font-size: 19px;
+}
+
+.login-brand span {
+  color: var(--muted);
+}
+
+.login-icon {
+  width: 70px;
+  height: 70px;
+  margin: 4px auto 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 20px;
+  color: var(--purple);
+  background: #efedff;
+}
+
+.login-card h1 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 30px;
+  line-height: 1.15;
+  letter-spacing: -1.2px;
+}
+
+.login-card > p {
+  max-width: 370px;
+  margin: 14px auto 24px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.login-button {
+  width: 100%;
+  min-height: 50px;
+  justify-content: center;
+  border-radius: 11px;
+  font-size: 14px;
+}
+
+.login-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.login-card > small {
+  display: block;
+  margin-top: 10px;
+  color: #b24b4b;
+  font-size: 11px;
+}
+
+.auth-error {
+  margin-top: 14px;
+  padding: 11px 13px;
+  border: 1px solid #f0cccc;
+  border-radius: 10px;
+  background: #fff5f5;
+  color: #a74747;
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.login-benefits {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  color: #666b7c;
+  font-size: 10px;
+}
+
+.login-benefits span {
+  white-space: nowrap;
+}
+
+/* Tela enquanto o Firebase verifica a sessão */
+.loading-state {
+  min-height: 100vh;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  color: var(--muted);
+  background: #f4f5fb;
+  font-size: 13px;
+}
+
+.spinner {
+  width: 25px;
+  height: 25px;
+  border: 3px solid #dedcf9;
+  border-top-color: var(--purple);
+  border-radius: 50%;
+  animation: memoria-spin 0.8s linear infinite;
+}
+
+@keyframes memoria-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Evita que a tela de login herde elementos da interface interna */
+.login-screen .brand {
+  color: var(--ink);
+}
+
+.login-screen button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 560px) {
+  .login-screen {
+    padding: 20px 14px;
+  }
+
+  .login-card {
+    padding: 30px 22px;
+    border-radius: 20px;
+  }
+
+  .login-card h1 {
+    font-size: 26px;
+  }
+
+  .login-brand {
+    padding-bottom: 24px;
+  }
+
+  .login-benefits {
+    flex-direction: column;
+    align-items: center;
+  }
+}

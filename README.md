@@ -85,6 +85,30 @@ Correções aplicadas:
 
 > Se aparecer `auth/unauthorized-domain`, o código está funcionando: falta adicionar o domínio do site em Firebase Console → Authentication → Settings → **Authorized domains**. Para localhost, confirme que `localhost` está autorizado.
 
+## Login obrigatório e sincronização de baralhos
+
+O site **removeu o modo visitante**: a área de estudos só é liberada depois do login com Google. Após autenticar, ele escuta a coleção `decks` do mesmo Firebase usado pelo aplicativo mobile:
+
+```text
+Google Auth
+   ↓
+uid
+   ↓
+Firestore /decks
+   ↓
+userId == uid
+   ↓
+baralhos + cards
+   ↓
+MemoriaFlash Web
+```
+
+Também são aceitos os decks `public` e `system`, seguindo as regras atuais do aplicativo. No mobile, o serviço oficial já sincroniza `decks` com `where('userId', 'in', [userId, 'public', 'system'])` — o site usa o mesmo contrato.
+
+Arquivos: `src/services/decks.js` (`subscribeToUserDecks`, `flattenDeckCards`).
+
+> Importante: o app mobile mantém uma camada local (`localStorage`) e também possui o serviço de sincronização Firestore. Para um deck aparecer no site, ele precisa estar salvo na coleção `decks` do Firebase com `userId` igual ao UID do Google.
+
 ## Geração sincronizada (IA)
 
 O site **não** cria um banco próprio de flashcards. A geração usa o mesmo endpoint do backend do aplicativo:
