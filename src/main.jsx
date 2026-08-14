@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { BookOpen, Brain, ChevronRight, Crown, Library, LogIn, LogOut, Search, Sparkles, TrendingUp, WandSparkles } from "lucide-react";
+import { BookOpen, Brain, ChevronRight, Crown, Library, LogIn, LogOut, Plus, Search, Sparkles, Tag, TrendingUp, WandSparkles, X, GraduationCap } from "lucide-react";
 import { GoogleAuthProvider, getIdToken, getRedirectResult, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut } from "firebase/auth";
 import { doc, onSnapshot } from "firebase/firestore";
 import { auth, authPersistenceReady, db, firebaseConfigured } from "./lib/firebase";
@@ -58,7 +58,8 @@ function App() {
   const [subscription, setSubscription] = useState({isPro:false,proPlanType:null,expiryDate:null});
   const [selectedDeck, setSelectedDeck] = useState(null);
   const [studyCards, setStudyCards] = useState([]);
-  const [generateForm, setGenerateForm] = useState({subject:"",topic:"",count:10,difficulty:"medium",level:"medio"});
+  const [generateForm, setGenerateForm] = useState({subject:"",deckName:"",topic:"",count:25,difficulty:"medium",level:"medio"});
+  const [topics, setTopics] = useState([]);
   const [generated, setGenerated] = useState([]);
   const [generateBusy, setGenerateBusy] = useState(false);
   const [generateError, setGenerateError] = useState("");
@@ -127,20 +128,42 @@ function App() {
     setTab("study");
   }
 
+  function updateGenerateField(field, value) {
+    setGenerateForm(current => ({...current, [field]: value}));
+  }
+
+  function addTopic() {
+    const value = generateForm.topic.trim();
+    if (!value) return;
+    if (!topics.some(topic => topic.toLowerCase() === value.toLowerCase())) setTopics(current => [...current, value]);
+    updateGenerateField("topic", "");
+  }
+
+  function removeTopic(index) {
+    setTopics(current => current.filter((_, itemIndex) => itemIndex !== index));
+  }
+
   async function generateCards() {
-    if (!generateForm.subject.trim() || !generateForm.topic.trim()) { setGenerateError("Informe a matéria e o tópico."); return; }
+    const selectedTopics = topics.length ? topics : (generateForm.topic.trim() ? [generateForm.topic.trim()] : []);
+    if (!generateForm.subject.trim() || !selectedTopics.length) { setGenerateError("Informe a matéria e pelo menos um tópico."); return; }
     if (!auth?.currentUser) { setGenerateError("Entre com sua conta Google para gerar cards."); return; }
     setGenerateBusy(true); setGenerateError(""); setSaveStatus(""); setGenerated([]);
     try {
       const token = await getIdToken(auth.currentUser);
       const base = (import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/,"");
+      const count = Math.min(100,Math.max(1,Number(generateForm.count)||25));
       const response = await fetch(`${base}/api/gemini/generate-flashcards`, {
         method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},
-        body:JSON.stringify({prompt:`Gere flashcards para a matéria "${generateForm.subject.trim()}" focando exclusivamente no tópico "${generateForm.topic.trim()}".`,subject:generateForm.subject.trim(),topic:generateForm.topic.trim(),selectedTopics:[generateForm.topic.trim()],educationLevel:generateForm.level,count:Math.min(50,Math.max(1,Number(generateForm.count)||10)),difficulty:generateForm.difficulty,language:"pt",cardContentType:"definition",sourceType:"subject",existingFronts:allDeckCards.map(item=>item.front).filter(Boolean).slice(0,500)}),
+        body:JSON.stringify({
+          prompt:`Gere flashcards para a matéria "${generateForm.subject.trim()}" focando exclusivamente nos tópicos: ${selectedTopics.join(", ")}.`,
+          subject:generateForm.subject.trim(), topic:selectedTopics[0], selectedTopics, educationLevel:generateForm.level,
+          count, difficulty:generateForm.difficulty, language:"pt", cardContentType:"definition", sourceType:"subject",
+          existingFronts:allDeckCards.map(item=>item.front).filter(Boolean).slice(0,500),
+        }),
       });
       const payload = await response.json().catch(()=>({}));
       if (!response.ok) throw new Error(payload?.error || payload?.message || `Erro HTTP ${response.status}`);
-      const cards = (Array.isArray(payload) ? payload : payload.cards || payload.data?.cards || []).map((item,index)=>({...item,id:item.id||`${Date.now()}-${index}`,front:item.front||item.question||"",back:item.back||item.answer||"",topic:item.topic||generateForm.topic.trim(),difficulty:item.difficulty||generateForm.difficulty,explanation:item.explanation||"",curiosity:item.curiosity||""})).filter(item=>item.front && item.back);
+      const cards = (Array.isArray(payload) ? payload : payload.cards || payload.data?.cards || []).map((item,index)=>({...item,id:item.id||`${Date.now()}-${index}`,front:item.front||item.question||"",back:item.back||item.answer||"",topic:item.topic||selectedTopics[index % selectedTopics.length],difficulty:item.difficulty||generateForm.difficulty,explanation:item.explanation||"",curiosity:item.curiosity||""})).filter(item=>item.front && item.back);
       if (!cards.length) throw new Error("A IA não retornou cards válidos.");
       setGenerated(cards);
     } catch (error) { setGenerateError(error?.message || "Não foi possível gerar os cards."); }
@@ -151,7 +174,8 @@ function App() {
     if (!generated.length || !user) return;
     setSaveBusy(true); setSaveStatus("");
     try {
-      const result = await createUserDeck({userId:user.uid,title:`${generateForm.subject.trim()} — ${generateForm.topic.trim()}`,category:generateForm.subject.trim(),description:`Baralho gerado no MemoriaFlash Web sobre ${generateForm.topic.trim()}.`,cards:generated});
+      const title = (generateForm.deckName.trim() || generateForm.subject.trim()).toUpperCase();
+      const result = await createUserDeck({userId:user.uid,title,category:generateForm.subject.trim(),description:`Baralho gerado no MemoriaFlash Web sobre ${topics.join(", ") || generateForm.topic.trim()}.`,cards:generated});
       setSaveStatus(`${result.cards.length} cards salvos e sincronizados com o aplicativo.`);
       setGenerated([]); setTab("library");
     } catch (error) { setSaveStatus(error?.message || "Não foi possível salvar o baralho."); }
@@ -190,7 +214,20 @@ function App() {
 
       {tab === "library" && <div className="page"><div className="page-title"><span className="eyebrow"><Library size={15}/> Biblioteca</span><h1>Meus baralhos</h1><p>Baralhos sincronizados pela sua conta Firebase.</p></div><AdSlot isPro={subscription.isPro} slot={import.meta.env.VITE_ADSENSE_LIBRARY_SLOT}/><div className="library-list">{filteredDecks.map(deck=><article className="library-row" key={deck.id} onClick={()=>startStudy(deck)}><div className="subject-icon violet"><BookOpen size={20}/></div><div className="row-main"><h3>{deck.title}</h3><span>{deck.cards.length} cards · {deck.category}</span></div><div className="topic-pills"><span>{deck.isPublic?"Público":"Meu baralho"}</span></div><button className="icon-button" onClick={e=>{e.stopPropagation();startStudy(deck)}}><ChevronRight size={18}/></button></article>)}</div>{!filteredDecks.length&&<div className="empty-state"><h3>Nenhum baralho encontrado</h3><p>Os baralhos do aplicativo aparecerão aqui quando forem sincronizados.</p></div>}</div>}
 
-      {tab === "generate" && <div className="page"><div className="page-title"><span className="eyebrow"><WandSparkles size={15}/> Inteligência artificial</span><h1>Gerar flashcards</h1><p>Gere, revise, estude e salve. Ao salvar, o baralho entra no Firebase e aparece no aplicativo mobile.</p></div><AdSlot isPro={subscription.isPro} slot={import.meta.env.VITE_ADSENSE_GENERATE_SLOT}/><div className="generator-card"><div className="generator-grid"><label>Matéria<input value={generateForm.subject} onChange={e=>setGenerateForm({...generateForm,subject:e.target.value})} placeholder="Ex.: Português"/></label><label>Tópico<input value={generateForm.topic} onChange={e=>setGenerateForm({...generateForm,topic:e.target.value})} placeholder="Ex.: Morfologia"/></label><label>Quantidade<select value={generateForm.count} onChange={e=>setGenerateForm({...generateForm,count:e.target.value})}>{[5,10,15,20,30,50].map(n=><option key={n}>{n}</option>)}</select></label><label>Dificuldade<select value={generateForm.difficulty} onChange={e=>setGenerateForm({...generateForm,difficulty:e.target.value})}><option value="easy">Fácil</option><option value="medium">Médio</option><option value="hard">Difícil</option><option value="specialist">Especialista</option></select></label><label>Nível<select value={generateForm.level} onChange={e=>setGenerateForm({...generateForm,level:e.target.value})}><option value="medio">Ensino médio</option><option value="superior">Superior</option><option value="concurso">Concurso</option></select></label></div>{generateError&&<div className="auth-error">{generateError}</div>}<button className="primary" onClick={generateCards} disabled={generateBusy}><WandSparkles size={17}/> {generateBusy?"Gerando...":"Gerar flashcards"}</button></div>{generated.length>0&&<><div className="section-head"><div><h2>{generated.length} cards gerados</h2><p>Revise o conteúdo antes de salvar.</p></div></div><div className="generated-actions"><button className="primary" onClick={saveGeneratedDeck} disabled={saveBusy}><Library size={17}/> {saveBusy?"Salvando...":"Salvar e sincronizar com o aplicativo"}</button><button className="secondary" onClick={()=>startStudy(null,generated)}>Estudar agora</button></div>{saveStatus&&<div className="feedback-status">{saveStatus}</div>}<div className="generated-list">{generated.map((item,index)=><article className="generated-card" key={item.id||index}><span>#{index+1}</span><h3>{item.front}</h3><p>{item.back}</p>{item.explanation&&<small>{item.explanation}</small>}</article>)}</div></>}</div>}
+      {tab === "generate" && <div className="page generator-page"><div className="page-title"><span className="eyebrow"><WandSparkles size={15}/> Inteligência artificial</span><h1>Gerar flashcards</h1><p>Crie seu material de estudo com a IA, revise e sincronize com o aplicativo.</p></div><AdSlot isPro={subscription.isPro} slot={import.meta.env.VITE_ADSENSE_GENERATE_SLOT}/>
+        <div className="mobile-studio-card">
+          <div className="studio-heading"><div className="studio-icon"><WandSparkles size={22}/></div><div><strong>Estúdio de Flashcards</strong><span>Crie um baralho personalizado com IA</span></div></div>
+          <div className="studio-field"><label><span>📚 Matéria / Assunto <b>*</b></span><input value={generateForm.subject} onChange={e=>updateGenerateField("subject",e.target.value.toUpperCase())} placeholder="Ex.: DIREITO PENAL, BIOLOGIA, MATEMÁTICA..."/></label></div>
+          <div className="studio-field"><label><span>🗂️ Nome do Baralho <em>(opcional)</em></span><input value={generateForm.deckName} onChange={e=>updateGenerateField("deckName",e.target.value.toUpperCase())} placeholder={generateForm.subject.trim() || "Ex.: DIREITO PENAL — PARTE GERAL"}/></label></div>
+          <div className="studio-field"><label><span><GraduationCap size={14}/> Nível de estudo</span><select value={generateForm.level} onChange={e=>updateGenerateField("level",e.target.value)}><option value="medio">Ensino médio</option><option value="superior">Ensino superior</option><option value="concurso">Concurso</option></select></label></div>
+          <div className="studio-section"><div className="studio-section-title"><span><Tag size={14}/> Tópicos de estudo</span><small>Adicione um ou mais</small></div><div className="topic-entry"><input value={generateForm.topic} onChange={e=>updateGenerateField("topic",e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();addTopic();}}} placeholder="Ex.: Morfologia, Parte Geral, Mitocôndrias..."/><button type="button" onClick={addTopic}><Plus size={17}/> Adicionar</button></div>{topics.length>0&&<div className="selected-topics">{topics.map((topic,index)=><span key={`${topic}-${index}`}>{topic}<button type="button" onClick={()=>removeTopic(index)} aria-label={`Remover ${topic}`}><X size={13}/></button></span>)}</div>}</div>
+          <div className="studio-section"><div className="studio-section-title"><span>Quantidade de Cards</span><small>Escolha o tamanho da geração</small></div><div className="count-options">{[[25,"Rápido"],[50,"Completo"],[100,"Intensivo"]].map(([n,label])=><button key={n} type="button" className={Number(generateForm.count)===n?"selected":""} onClick={()=>updateGenerateField("count",n)}><strong>{n}</strong><small>{label}</small></button>)}</div></div>
+          <div className="studio-section"><div className="studio-section-title"><span>Dificuldade</span><small>Defina o nível dos cards</small></div><div className="difficulty-options">{[["easy","Fácil","Fundamentos"],["medium","Médio","Conceitos"],["hard","Difícil","Pegadinhas"],["specialist","Especialista","Avançado"]].map(([value,label,desc])=><button key={value} type="button" className={generateForm.difficulty===value?"selected":""} onClick={()=>updateGenerateField("difficulty",value)}><strong>{label}</strong><small>{desc}</small></button>)}</div></div>
+          {generateError&&<div className="auth-error">{generateError}</div>}
+          <button className="studio-generate" onClick={generateCards} disabled={generateBusy}><WandSparkles size={19}/> {generateBusy?"Criando flashcards com IA...":`Gerar ${generateForm.count} Flashcards com IA`}</button>
+        </div>
+        {generated.length>0&&<><div className="section-head"><div><h2>{generated.length} cards gerados</h2><p>Revise o conteúdo antes de salvar no seu Firebase.</p></div></div><div className="generated-actions"><button className="primary" onClick={saveGeneratedDeck} disabled={saveBusy}><Library size={17}/> {saveBusy?"Salvando...":"Salvar e sincronizar com o aplicativo"}</button><button className="secondary" onClick={()=>startStudy(null,generated)}>Estudar agora</button></div>{saveStatus&&<div className="feedback-status">{saveStatus}</div>}<div className="generated-list">{generated.map((item,index)=><article className="generated-card" key={item.id||index}><div className="generated-card-head"><span>#{index+1}</span>{item.topic&&<small>{item.topic}</small>}</div><h3>{item.front}</h3><p>{item.back}</p>{item.explanation&&<small className="generated-explanation">💡 {item.explanation}</small>}</article>)}</div></>}
+      </div>}
 
       {tab === "stats" && <div className="page"><div className="page-title"><span className="eyebrow"><TrendingUp size={15}/> Progresso</span><h1>Seu desempenho</h1><p>Dados associados à sua conta e aos cards sincronizados.</p></div><div className="today-grid"><div className="metric-card"><div className="metric-icon purple"><Library size={18}/></div><strong>{decks.length}</strong><span>baralhos</span></div><div className="metric-card"><div className="metric-icon blue"><BookOpen size={18}/></div><strong>{allDeckCards.length}</strong><span>cards</span></div><div className="metric-card"><div className="metric-icon green"><TrendingUp size={18}/></div><strong>{dueCards.length}</strong><span>para revisar</span></div><div className="metric-card"><div className="metric-icon orange"><Crown size={18}/></div><strong>{subscription.isPro?"PRO":"FREE"}</strong><span>{subscription.isPro?"sem anúncios":"com anúncios"}</span></div></div><AdSlot isPro={subscription.isPro} slot={import.meta.env.VITE_ADSENSE_STATS_SLOT}/></div>}
     </main>
