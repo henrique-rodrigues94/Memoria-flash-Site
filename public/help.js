@@ -2,10 +2,13 @@
   const HELP_ID = "memoriaflash-help-panel";
   const NAV_ID = "memoriaflash-help-nav";
 
-  function closeHelp() {
-    const panel = document.getElementById(HELP_ID);
-    if (panel) panel.remove();
-    document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
+  function loadStudyStyles() {
+    if (document.getElementById("memoriaflash-study-first-css")) return;
+    const link = document.createElement("link");
+    link.id = "memoriaflash-study-first-css";
+    link.rel = "stylesheet";
+    link.href = "/study-first.css";
+    document.head.appendChild(link);
   }
 
   function openHelp() {
@@ -32,38 +35,19 @@
           </div>
           <div class="help-hero-icon">?</div>
         </header>
-
         <div class="help-grid">
-          <article class="help-card">
-            <div class="help-card-icon">💡</div>
-            <h2>Sugestão de melhoria</h2>
-            <p>Tem uma ideia para deixar seus estudos mais rápidos, simples ou úteis?</p>
-          </article>
-          <article class="help-card">
-            <div class="help-card-icon">🐛</div>
-            <h2>Encontrou um problema?</h2>
-            <p>Descreva o que aconteceu e, se possível, diga em qual tela ocorreu.</p>
-          </article>
-          <article class="help-card">
-            <div class="help-card-icon">✨</div>
-            <h2>Nova funcionalidade</h2>
-            <p>Conte qual recurso você gostaria de encontrar no MemoriaFlash.</p>
-          </article>
+          <article class="help-card"><div class="help-card-icon">💡</div><h2>Sugestão de melhoria</h2><p>Tem uma ideia para deixar seus estudos mais rápidos, simples ou úteis?</p></article>
+          <article class="help-card"><div class="help-card-icon">🐛</div><h2>Encontrou um problema?</h2><p>Descreva o que aconteceu e, se possível, diga em qual tela ocorreu.</p></article>
+          <article class="help-card"><div class="help-card-icon">✨</div><h2>Nova funcionalidade</h2><p>Conte qual recurso você gostaria de encontrar no MemoriaFlash.</p></article>
         </div>
-
         <form class="help-feedback-form" id="memoriaflash-feedback-form">
-          <div class="help-form-head">
-            <div><h2>Enviar feedback</h2><p>Seu feedback ajuda a definir as próximas melhorias.</p></div>
-          </div>
+          <div class="help-form-head"><div><h2>Enviar feedback</h2><p>Seu feedback ajuda a definir as próximas melhorias.</p></div></div>
           <div class="help-form-grid">
             <label>Tipo de feedback<select name="type" required><option value="Sugestão">Sugestão</option><option value="Problema">Problema</option><option value="Dúvida">Dúvida</option><option value="Nova funcionalidade">Nova funcionalidade</option></select></label>
             <label>Tela relacionada<select name="screen"><option>Início</option><option>Meus baralhos</option><option>Estudo</option><option>Progresso</option><option>Login</option><option>Outra</option></select></label>
             <label class="help-full">Mensagem<textarea name="message" rows="6" maxlength="2000" placeholder="Escreva aqui o que você gostaria de melhorar..." required></textarea></label>
           </div>
-          <div class="help-form-foot">
-            <span>Não envie senhas ou informações sensíveis.</span>
-            <button class="primary" type="submit">Enviar feedback</button>
-          </div>
+          <div class="help-form-foot"><span>Não envie senhas ou informações sensíveis.</span><button class="primary" type="submit">Enviar feedback</button></div>
           <div class="help-feedback-status" id="memoriaflash-feedback-status" role="status"></div>
         </form>
       </div>`;
@@ -84,16 +68,15 @@
       const message = String(data.get("message") || "").trim();
       const status = document.getElementById("memoriaflash-feedback-status");
       if (!message) return;
-
       const subject = `[MemoriaFlash] ${type} - ${screen}`;
       const body = `Tipo: ${type}\nTela: ${screen}\n\nFeedback:\n${message}`;
-      const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      window.location.href = mailto;
+      window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       if (status) status.textContent = "Abrindo seu aplicativo de e-mail para enviar o feedback...";
     });
   }
 
   function installNav() {
+    loadStudyStyles();
     const nav = document.querySelector(".sidebar nav");
     if (!nav || document.getElementById(NAV_ID)) return;
     const button = document.createElement("button");
@@ -107,7 +90,7 @@
 
   function observeApp() {
     installNav();
-    const observer = new MutationObserver(() => installNav());
+    const observer = new MutationObserver(installNav);
     const root = document.getElementById("root");
     if (root) observer.observe(root, { childList: true, subtree: true });
   }
