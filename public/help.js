@@ -88,11 +88,30 @@
     nav.appendChild(button);
   }
 
+  function restorePublicHomeAfterLogout() {
+    const loginScreen = document.querySelector(".login-screen");
+    if (!loginScreen) return;
+
+    document.body.classList.remove("app-mode");
+
+    if (window.location.hash === "#app") {
+      window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+    }
+
+    window.scrollTo(0, 0);
+  }
+
   function observeApp() {
     installNav();
-    const observer = new MutationObserver(installNav);
     const root = document.getElementById("root");
-    if (root) observer.observe(root, { childList: true, subtree: true });
+    if (root) {
+      const observer = new MutationObserver(() => {
+        installNav();
+        restorePublicHomeAfterLogout();
+      });
+      observer.observe(root, { childList: true, subtree: true });
+    }
+    restorePublicHomeAfterLogout();
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", observeApp);
