@@ -8,6 +8,20 @@ import { createUserDeck, flattenDeckCards, subscribeToUserDecks } from "./servic
 import StudySession from "./components/StudySession";
 import "./styles.css";
 
+function GeneratorStyles() {
+  const css = `
+    .generator-page .page-title{margin-bottom:22px}.mobile-studio-card{max-width:900px;margin:0 auto;padding:28px;border-radius:24px;color:#fff;background:linear-gradient(145deg,#071625,#0b1a2a 55%,#0e2033);border:1px solid rgba(173,198,255,.16);box-shadow:0 24px 70px rgba(10,18,32,.18)}
+    .studio-heading{display:flex;align-items:center;gap:14px;padding-bottom:22px;margin-bottom:22px;border-bottom:1px solid rgba(173,198,255,.12)}.studio-icon{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#f97316,#f59e0b);box-shadow:0 10px 28px rgba(249,115,22,.2)}.studio-heading strong{display:block;font-size:17px}.studio-heading span{display:block;color:#8c91a0;font-size:11px;margin-top:4px}
+    .studio-field{margin-bottom:18px}.studio-field label{display:block}.studio-field label>span,.studio-section-title>span{display:flex;align-items:center;gap:7px;margin-bottom:8px;color:#adc6ff;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.65px}.studio-field label>span b{color:#fb7185}.studio-field label>span em{color:#687384;font-style:normal;font-weight:500;text-transform:none;letter-spacing:0}.studio-field input,.studio-field select,.topic-entry input{width:100%;min-height:48px;border-radius:12px;border:1px solid rgba(66,71,84,.72);outline:none;background:#051424;color:#fff;padding:12px 14px;font-size:13px}.studio-field input::placeholder,.topic-entry input::placeholder{color:#687384}.studio-field input:focus,.studio-field select:focus,.topic-entry input:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(96,165,250,.08)}
+    .studio-section{margin-top:22px;padding-top:22px;border-top:1px solid rgba(173,198,255,.1)}.studio-section-title{display:flex;justify-content:space-between;gap:12px;align-items:end;margin-bottom:10px}.studio-section-title>span{margin:0}.studio-section-title small{color:#667285;font-size:10px}.topic-entry{display:grid;grid-template-columns:1fr auto;gap:9px}.topic-entry button{border:1px solid rgba(66,71,84,.7);background:#17263a;color:#fff;border-radius:12px;padding:0 17px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:11px;font-weight:800}.topic-entry button:hover{background:#203550;border-color:#60a5fa}.selected-topics{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px}.selected-topics>span{display:inline-flex;align-items:center;gap:7px;padding:8px 10px;border-radius:10px;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.3);color:#adc6ff;font-size:11px;font-weight:700}.selected-topics button{border:0;background:transparent;color:#8c91a0;display:grid;place-items:center;padding:0}
+    .count-options,.difficulty-options{display:grid;gap:9px}.count-options{grid-template-columns:repeat(3,1fr)}.difficulty-options{grid-template-columns:repeat(4,1fr)}.count-options button,.difficulty-options button{min-height:68px;border:1px solid rgba(66,71,84,.65);background:#051424;color:#8c91a0;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}.count-options button strong{font-size:18px;color:#fff}.count-options button small,.difficulty-options button small{font-size:9px;color:#687384}.difficulty-options button strong{font-size:11px;color:#c2c6d6}.count-options button:hover,.difficulty-options button:hover{border-color:rgba(96,165,250,.55)}.count-options button.selected,.difficulty-options button.selected{border-color:#60a5fa;background:rgba(37,99,235,.16);box-shadow:0 0 0 1px rgba(96,165,250,.12) inset}.count-options button.selected strong,.difficulty-options button.selected strong{color:#dbeafe}
+    .studio-generate{width:100%;min-height:54px;margin-top:26px;border:0;border-radius:13px;color:#fff;background:linear-gradient(90deg,#f97316,#f59e0b);box-shadow:0 12px 30px rgba(249,115,22,.2);display:flex;align-items:center;justify-content:center;gap:9px;font-size:13px;font-weight:900}.studio-generate:hover:not(:disabled){background:linear-gradient(90deg,#ea580c,#d97706)}.studio-generate:disabled{opacity:.45;cursor:not-allowed}
+    .generated-actions{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}.generated-list{display:grid;gap:10px}.generated-card{background:#0b1a2a;border:1px solid rgba(173,198,255,.16);border-radius:16px;padding:16px;color:#fff}.generated-card-head{display:flex;align-items:center;gap:9px;margin-bottom:9px}.generated-card-head>span{color:#fb923c;background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.2);border-radius:7px;padding:4px 7px;font-size:10px;font-weight:800}.generated-card-head small{color:#64748b;text-transform:uppercase;letter-spacing:.7px;font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.generated-card h3{margin:0 0 10px;color:#fff;font-size:14px;line-height:1.45}.generated-card p{margin:0;color:#adc6ff;font-size:12px;line-height:1.6;white-space:pre-line}.generated-explanation{display:block;margin-top:12px;padding-top:11px;border-top:1px solid rgba(66,71,84,.4);color:#fbbf24;font-size:11px;line-height:1.5}
+    @media(max-width:760px){.mobile-studio-card{padding:20px 16px;border-radius:19px}.difficulty-options{grid-template-columns:repeat(2,1fr)}.topic-entry{grid-template-columns:1fr}.topic-entry button{min-height:44px}}@media(max-width:480px){.mobile-studio-card{padding:18px 13px}.studio-field input,.studio-field select,.topic-entry input{min-height:46px;font-size:12px}}
+  `;
+  return <style>{css}</style>;
+}
+
 function authErrorMessage(error) {
   const code = error?.code || "";
   if (code.includes("unauthorized-domain")) return "Este domínio ainda não está autorizado no Firebase Authentication.";
@@ -20,8 +34,7 @@ function authErrorMessage(error) {
 function LoginScreen({ onLogin, busy, error }) {
   return <main className="login-screen"><div className="login-card">
     <div className="brand login-brand"><div className="brand-mark"><Brain size={25}/></div><div><strong>MemoriaFlash</strong><span>Estude melhor</span></div></div>
-    <div className="login-icon"><BookOpen size={34}/></div>
-    <h1>Seus estudos em qualquer lugar.</h1>
+    <div className="login-icon"><BookOpen size={34}/></div><h1>Seus estudos em qualquer lugar.</h1>
     <p>Entre com sua conta Google para acessar os mesmos baralhos e cards do aplicativo mobile.</p>
     <button className="primary login-button" onClick={onLogin} disabled={busy || !firebaseConfigured}><LogIn size={18}/> {busy ? "Entrando..." : "Entrar com Google"}</button>
     {!firebaseConfigured && <small>Firebase não está configurado neste ambiente.</small>}
@@ -32,206 +45,36 @@ function LoginScreen({ onLogin, busy, error }) {
 
 function AdSlot({ isPro, slot = "" }) {
   const client = import.meta.env.VITE_ADSENSE_CLIENT;
-  useEffect(() => {
-    if (isPro || !client || !slot) return;
-    const id = "memoriaflash-adsense";
-    if (!document.getElementById(id)) {
-      const script = document.createElement("script");
-      script.id = id; script.async = true; script.crossOrigin = "anonymous";
-      script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${client}`;
-      document.head.appendChild(script);
-    }
-  }, [isPro, client, slot]);
+  useEffect(() => { if (isPro || !client || !slot) return; const id="memoriaflash-adsense"; if(!document.getElementById(id)){const script=document.createElement("script");script.id=id;script.async=true;script.crossOrigin="anonymous";script.src=`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${client}`;document.head.appendChild(script);} }, [isPro,client,slot]);
   if (isPro || !client || !slot) return null;
   return <div className="ad-slot" aria-label="Publicidade"><ins className="adsbygoogle" style={{display:"block"}} data-ad-client={client} data-ad-slot={slot} data-ad-format="auto" data-full-width-responsive="true" /></div>;
 }
 
 function App() {
-  const [user, setUser] = useState(null);
-  const [authReady, setAuthReady] = useState(!auth);
-  const [authBusy, setAuthBusy] = useState(false);
-  const [authError, setAuthError] = useState("");
-  const [tab, setTab] = useState("home");
-  const [query, setQuery] = useState("");
-  const [decks, setDecks] = useState([]);
-  const [deckError, setDeckError] = useState("");
-  const [subscription, setSubscription] = useState({isPro:false,proPlanType:null,expiryDate:null});
-  const [selectedDeck, setSelectedDeck] = useState(null);
-  const [studyCards, setStudyCards] = useState([]);
-  const [generateForm, setGenerateForm] = useState({subject:"",deckName:"",topic:"",count:25,difficulty:"medium",level:"medio"});
-  const [topics, setTopics] = useState([]);
-  const [generated, setGenerated] = useState([]);
-  const [generateBusy, setGenerateBusy] = useState(false);
-  const [generateError, setGenerateError] = useState("");
-  const [saveBusy, setSaveBusy] = useState(false);
-  const [saveStatus, setSaveStatus] = useState("");
-
-  useEffect(() => {
-    if (!auth) { setAuthReady(true); return undefined; }
-    let active = true;
-    const unsubscribe = onAuthStateChanged(auth, nextUser => { if (!active) return; setUser(nextUser); setAuthReady(true); setAuthBusy(false); });
-    getRedirectResult(auth).catch(error => { if (!active || error?.code === "auth/no-auth-event") return; setAuthError(authErrorMessage(error)); setAuthBusy(false); });
-    return () => { active = false; unsubscribe(); };
-  }, []);
-
-  useEffect(() => {
-    if (!user) { setDecks([]); setDeckError(""); return undefined; }
-    return subscribeToUserDecks(user.uid, setDecks, () => setDeckError("Não foi possível sincronizar seus baralhos. Verifique as regras do Firestore."));
-  }, [user]);
-
-  useEffect(() => {
-    if (!db || !user) { setSubscription({isPro:false,proPlanType:null,expiryDate:null}); return undefined; }
-    return onSnapshot(doc(db,"userStats",user.uid), snap => {
-      const data = snap.exists() ? snap.data() : {};
-      const expiryDate = data.proExpiryDate || data.proExpiryDateIso || null;
-      const expiryMs = expiryDate ? new Date(expiryDate).getTime() : NaN;
-      setSubscription({isPro:Boolean(data.isPro) && !(Number.isFinite(expiryMs) && expiryMs <= Date.now()),proPlanType:data.proPlanType || null,expiryDate});
-    }, () => setSubscription({isPro:false,proPlanType:null,expiryDate:null}));
-  }, [user]);
-
-  const allDeckCards = useMemo(() => flattenDeckCards(decks), [decks]);
-  const filteredDecks = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return decks;
-    return decks.filter(deck => `${deck.title} ${deck.category} ${deck.description}`.toLowerCase().includes(q));
-  }, [decks, query]);
-  const dueCards = allDeckCards.filter(card => card.dueDate && new Date(card.dueDate) <= new Date());
-
-  async function login() {
-    if (!auth || !firebaseConfigured || authBusy) return;
-    setAuthBusy(true); setAuthError("");
-    try {
-      await authPersistenceReady;
-      const provider = new GoogleAuthProvider(); provider.setCustomParameters({prompt:"select_account"});
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      const code = error?.code || "";
-      if (code.includes("popup-blocked") || code.includes("popup-failed") || code.includes("operation-not-supported-in-this-environment")) {
-        try { const provider = new GoogleAuthProvider(); provider.setCustomParameters({prompt:"select_account"}); await signInWithRedirect(auth, provider); return; }
-        catch (redirectError) { setAuthError(authErrorMessage(redirectError)); }
-      } else setAuthError(authErrorMessage(error));
-      setAuthBusy(false);
-    }
-  }
-
-  async function logout() {
-    if (!auth || authBusy) return;
-    setAuthBusy(true);
-    try { await signOut(auth); setTab("home"); setSelectedDeck(null); setStudyCards([]); }
-    catch (error) { setAuthError(authErrorMessage(error)); }
-    finally { setAuthBusy(false); }
-  }
-
-  function startStudy(deck, cards = deck?.cards || []) {
-    setSelectedDeck(deck || null);
-    setStudyCards(Array.isArray(cards) ? cards : []);
-    setTab("study");
-  }
-
-  function updateGenerateField(field, value) {
-    setGenerateForm(current => ({...current, [field]: value}));
-  }
-
-  function addTopic() {
-    const value = generateForm.topic.trim();
-    if (!value) return;
-    if (!topics.some(topic => topic.toLowerCase() === value.toLowerCase())) setTopics(current => [...current, value]);
-    updateGenerateField("topic", "");
-  }
-
-  function removeTopic(index) {
-    setTopics(current => current.filter((_, itemIndex) => itemIndex !== index));
-  }
-
-  async function generateCards() {
-    const selectedTopics = topics.length ? topics : (generateForm.topic.trim() ? [generateForm.topic.trim()] : []);
-    if (!generateForm.subject.trim() || !selectedTopics.length) { setGenerateError("Informe a matéria e pelo menos um tópico."); return; }
-    if (!auth?.currentUser) { setGenerateError("Entre com sua conta Google para gerar cards."); return; }
-    setGenerateBusy(true); setGenerateError(""); setSaveStatus(""); setGenerated([]);
-    try {
-      const token = await getIdToken(auth.currentUser);
-      const base = (import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/,"");
-      const count = Math.min(100,Math.max(1,Number(generateForm.count)||25));
-      const response = await fetch(`${base}/api/gemini/generate-flashcards`, {
-        method:"POST", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},
-        body:JSON.stringify({
-          prompt:`Gere flashcards para a matéria "${generateForm.subject.trim()}" focando exclusivamente nos tópicos: ${selectedTopics.join(", ")}.`,
-          subject:generateForm.subject.trim(), topic:selectedTopics[0], selectedTopics, educationLevel:generateForm.level,
-          count, difficulty:generateForm.difficulty, language:"pt", cardContentType:"definition", sourceType:"subject",
-          existingFronts:allDeckCards.map(item=>item.front).filter(Boolean).slice(0,500),
-        }),
-      });
-      const payload = await response.json().catch(()=>({}));
-      if (!response.ok) throw new Error(payload?.error || payload?.message || `Erro HTTP ${response.status}`);
-      const cards = (Array.isArray(payload) ? payload : payload.cards || payload.data?.cards || []).map((item,index)=>({...item,id:item.id||`${Date.now()}-${index}`,front:item.front||item.question||"",back:item.back||item.answer||"",topic:item.topic||selectedTopics[index % selectedTopics.length],difficulty:item.difficulty||generateForm.difficulty,explanation:item.explanation||"",curiosity:item.curiosity||""})).filter(item=>item.front && item.back);
-      if (!cards.length) throw new Error("A IA não retornou cards válidos.");
-      setGenerated(cards);
-    } catch (error) { setGenerateError(error?.message || "Não foi possível gerar os cards."); }
-    finally { setGenerateBusy(false); }
-  }
-
-  async function saveGeneratedDeck() {
-    if (!generated.length || !user) return;
-    setSaveBusy(true); setSaveStatus("");
-    try {
-      const title = (generateForm.deckName.trim() || generateForm.subject.trim()).toUpperCase();
-      const result = await createUserDeck({userId:user.uid,title,category:generateForm.subject.trim(),description:`Baralho gerado no MemoriaFlash Web sobre ${topics.join(", ") || generateForm.topic.trim()}.`,cards:generated});
-      setSaveStatus(`${result.cards.length} cards salvos e sincronizados com o aplicativo.`);
-      setGenerated([]); setTab("library");
-    } catch (error) { setSaveStatus(error?.message || "Não foi possível salvar o baralho."); }
-    finally { setSaveBusy(false); }
-  }
-
-  if (!authReady) return <div className="loading-state"><span className="spinner"/> Verificando sua conta...</div>;
-  if (!user) return <LoginScreen onLogin={login} busy={authBusy} error={authError}/>;
-
-  const nav = next => {
-    const icons = {home:Sparkles,library:Library,study:BookOpen,generate:WandSparkles,stats:TrendingUp};
-    const labels = {home:"Início",library:"Meus baralhos",study:"Estudar",generate:"Gerar com IA",stats:"Progresso"};
-    const Icon = icons[next];
-    return <button className={tab===next ? "nav-item active":"nav-item"} onClick={()=>setTab(next)}><Icon size={19}/> {labels[next]}</button>;
-  };
-
-  if (tab === "study") {
-    return <StudySession user={user} deck={selectedDeck} cards={studyCards} onExit={()=>{setTab("library");setSelectedDeck(null);setStudyCards([]);}}/>;
-  }
-
-  return <div className="app-shell">
-    <aside className="sidebar">
-      <div className="brand"><div className="brand-mark"><Brain size={22}/></div><div><strong>MemoriaFlash</strong><span>{user.displayName || "Sua conta"}</span></div></div>
-      <nav>{nav("home")}{nav("library")}{nav("study")}{nav("generate")}{nav("stats")}</nav>
-      <div className="sidebar-bottom">
-        <div className="streak-card"><div className="streak-icon">{subscription.isPro?<Crown size={18}/>:<BookOpen size={18}/>}</div><div><strong>{subscription.isPro?"Plano PRO":"Plano gratuito"}</strong><span>{subscription.isPro?"Sem anúncios":user.email}</span></div></div>
-        <button className="nav-item" onClick={logout} disabled={authBusy}><LogOut size={19}/> {authBusy?"Saindo...":"Sair"}</button>
-        {deckError && <small className="feedback-status">{deckError}</small>}
-      </div>
-    </aside>
-
-    <main className="main">
-      <header className="topbar"><div className="mobile-brand"><Brain size={20}/> MemoriaFlash</div><div className="top-search"><Search size={18}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar baralho..."/></div><button className="profile">{user.displayName?.[0]?.toUpperCase() || "M"}</button></header>
-
-      {tab === "home" && <div className="page"><section className="hero"><div><span className="eyebrow"><Sparkles size={15}/> Conta sincronizada</span><h1>Continue seus estudos.</h1><p>Estude no computador os mesmos baralhos e cards do seu aplicativo mobile.</p><button className="primary" onClick={()=>setTab("library")}>Ver meus baralhos <ChevronRight size={18}/></button></div><div className="hero-orbit"><BookOpen size={92}/><span>{decks.length}</span><small>baralhos</small></div></section><AdSlot isPro={subscription.isPro} slot={import.meta.env.VITE_ADSENSE_HOME_SLOT}/><section className="section-head"><div><h2>Resumo</h2><p>{allDeckCards.length.toLocaleString("pt-BR")} cards sincronizados.</p></div></section><div className="today-grid"><div className="metric-card"><div className="metric-icon purple"><Library size={18}/></div><strong>{decks.length}</strong><span>baralhos</span></div><div className="metric-card"><div className="metric-icon blue"><BookOpen size={18}/></div><strong>{allDeckCards.length}</strong><span>cards</span></div><div className="metric-card"><div className="metric-icon green"><TrendingUp size={18}/></div><strong>{dueCards.length}</strong><span>para revisar</span></div><div className="metric-card"><div className="metric-icon orange"><Crown size={18}/></div><strong>{subscription.isPro?"PRO":"FREE"}</strong><span>{subscription.isPro?"sem anúncios":"plano atual"}</span></div></div><section className="section-head"><div><h2>Seus baralhos</h2></div></section><div className="subject-grid">{filteredDecks.slice(0,8).map(deck=><article className="subject-card" key={deck.id}><div className="subject-icon violet"><BookOpen size={20}/></div><div className="subject-main"><h3>{deck.title}</h3><span>{deck.cards.length} cards · {deck.category}</span></div><div className="progress"><div style={{width:"0%"}}/></div><div className="subject-foot"><span>Sincronizado</span><button onClick={()=>startStudy(deck)}>Estudar <ChevronRight size={15}/></button></div></article>)}</div>{!decks.length&&<div className="empty-state"><h3>Nenhum baralho sincronizado ainda</h3><p>Crie um baralho no aplicativo ou gere cards no site e salve.</p></div>}</div>}
-
-      {tab === "library" && <div className="page"><div className="page-title"><span className="eyebrow"><Library size={15}/> Biblioteca</span><h1>Meus baralhos</h1><p>Baralhos sincronizados pela sua conta Firebase.</p></div><AdSlot isPro={subscription.isPro} slot={import.meta.env.VITE_ADSENSE_LIBRARY_SLOT}/><div className="library-list">{filteredDecks.map(deck=><article className="library-row" key={deck.id} onClick={()=>startStudy(deck)}><div className="subject-icon violet"><BookOpen size={20}/></div><div className="row-main"><h3>{deck.title}</h3><span>{deck.cards.length} cards · {deck.category}</span></div><div className="topic-pills"><span>{deck.isPublic?"Público":"Meu baralho"}</span></div><button className="icon-button" onClick={e=>{e.stopPropagation();startStudy(deck)}}><ChevronRight size={18}/></button></article>)}</div>{!filteredDecks.length&&<div className="empty-state"><h3>Nenhum baralho encontrado</h3><p>Os baralhos do aplicativo aparecerão aqui quando forem sincronizados.</p></div>}</div>}
-
-      {tab === "generate" && <div className="page generator-page"><div className="page-title"><span className="eyebrow"><WandSparkles size={15}/> Inteligência artificial</span><h1>Gerar flashcards</h1><p>Crie seu material de estudo com a IA, revise e sincronize com o aplicativo.</p></div><AdSlot isPro={subscription.isPro} slot={import.meta.env.VITE_ADSENSE_GENERATE_SLOT}/>
-        <div className="mobile-studio-card">
-          <div className="studio-heading"><div className="studio-icon"><WandSparkles size={22}/></div><div><strong>Estúdio de Flashcards</strong><span>Crie um baralho personalizado com IA</span></div></div>
-          <div className="studio-field"><label><span>📚 Matéria / Assunto <b>*</b></span><input value={generateForm.subject} onChange={e=>updateGenerateField("subject",e.target.value.toUpperCase())} placeholder="Ex.: DIREITO PENAL, BIOLOGIA, MATEMÁTICA..."/></label></div>
-          <div className="studio-field"><label><span>🗂️ Nome do Baralho <em>(opcional)</em></span><input value={generateForm.deckName} onChange={e=>updateGenerateField("deckName",e.target.value.toUpperCase())} placeholder={generateForm.subject.trim() || "Ex.: DIREITO PENAL — PARTE GERAL"}/></label></div>
-          <div className="studio-field"><label><span><GraduationCap size={14}/> Nível de estudo</span><select value={generateForm.level} onChange={e=>updateGenerateField("level",e.target.value)}><option value="medio">Ensino médio</option><option value="superior">Ensino superior</option><option value="concurso">Concurso</option></select></label></div>
-          <div className="studio-section"><div className="studio-section-title"><span><Tag size={14}/> Tópicos de estudo</span><small>Adicione um ou mais</small></div><div className="topic-entry"><input value={generateForm.topic} onChange={e=>updateGenerateField("topic",e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();addTopic();}}} placeholder="Ex.: Morfologia, Parte Geral, Mitocôndrias..."/><button type="button" onClick={addTopic}><Plus size={17}/> Adicionar</button></div>{topics.length>0&&<div className="selected-topics">{topics.map((topic,index)=><span key={`${topic}-${index}`}>{topic}<button type="button" onClick={()=>removeTopic(index)} aria-label={`Remover ${topic}`}><X size={13}/></button></span>)}</div>}</div>
-          <div className="studio-section"><div className="studio-section-title"><span>Quantidade de Cards</span><small>Escolha o tamanho da geração</small></div><div className="count-options">{[[25,"Rápido"],[50,"Completo"],[100,"Intensivo"]].map(([n,label])=><button key={n} type="button" className={Number(generateForm.count)===n?"selected":""} onClick={()=>updateGenerateField("count",n)}><strong>{n}</strong><small>{label}</small></button>)}</div></div>
-          <div className="studio-section"><div className="studio-section-title"><span>Dificuldade</span><small>Defina o nível dos cards</small></div><div className="difficulty-options">{[["easy","Fácil","Fundamentos"],["medium","Médio","Conceitos"],["hard","Difícil","Pegadinhas"],["specialist","Especialista","Avançado"]].map(([value,label,desc])=><button key={value} type="button" className={generateForm.difficulty===value?"selected":""} onClick={()=>updateGenerateField("difficulty",value)}><strong>{label}</strong><small>{desc}</small></button>)}</div></div>
-          {generateError&&<div className="auth-error">{generateError}</div>}
-          <button className="studio-generate" onClick={generateCards} disabled={generateBusy}><WandSparkles size={19}/> {generateBusy?"Criando flashcards com IA...":`Gerar ${generateForm.count} Flashcards com IA`}</button>
-        </div>
-        {generated.length>0&&<><div className="section-head"><div><h2>{generated.length} cards gerados</h2><p>Revise o conteúdo antes de salvar no seu Firebase.</p></div></div><div className="generated-actions"><button className="primary" onClick={saveGeneratedDeck} disabled={saveBusy}><Library size={17}/> {saveBusy?"Salvando...":"Salvar e sincronizar com o aplicativo"}</button><button className="secondary" onClick={()=>startStudy(null,generated)}>Estudar agora</button></div>{saveStatus&&<div className="feedback-status">{saveStatus}</div>}<div className="generated-list">{generated.map((item,index)=><article className="generated-card" key={item.id||index}><div className="generated-card-head"><span>#{index+1}</span>{item.topic&&<small>{item.topic}</small>}</div><h3>{item.front}</h3><p>{item.back}</p>{item.explanation&&<small className="generated-explanation">💡 {item.explanation}</small>}</article>)}</div></>}
-      </div>}
-
-      {tab === "stats" && <div className="page"><div className="page-title"><span className="eyebrow"><TrendingUp size={15}/> Progresso</span><h1>Seu desempenho</h1><p>Dados associados à sua conta e aos cards sincronizados.</p></div><div className="today-grid"><div className="metric-card"><div className="metric-icon purple"><Library size={18}/></div><strong>{decks.length}</strong><span>baralhos</span></div><div className="metric-card"><div className="metric-icon blue"><BookOpen size={18}/></div><strong>{allDeckCards.length}</strong><span>cards</span></div><div className="metric-card"><div className="metric-icon green"><TrendingUp size={18}/></div><strong>{dueCards.length}</strong><span>para revisar</span></div><div className="metric-card"><div className="metric-icon orange"><Crown size={18}/></div><strong>{subscription.isPro?"PRO":"FREE"}</strong><span>{subscription.isPro?"sem anúncios":"com anúncios"}</span></div></div><AdSlot isPro={subscription.isPro} slot={import.meta.env.VITE_ADSENSE_STATS_SLOT}/></div>}
-    </main>
-  </div>;
+  const [user,setUser]=useState(null); const [authReady,setAuthReady]=useState(!auth); const [authBusy,setAuthBusy]=useState(false); const [authError,setAuthError]=useState(""); const [tab,setTab]=useState("home"); const [query,setQuery]=useState(""); const [decks,setDecks]=useState([]); const [deckError,setDeckError]=useState(""); const [subscription,setSubscription]=useState({isPro:false,proPlanType:null,expiryDate:null}); const [selectedDeck,setSelectedDeck]=useState(null); const [studyCards,setStudyCards]=useState([]);
+  const [generateForm,setGenerateForm]=useState({subject:"",deckName:"",topic:"",count:25,difficulty:"medium",level:"medio"}); const [topics,setTopics]=useState([]); const [generated,setGenerated]=useState([]); const [generateBusy,setGenerateBusy]=useState(false); const [generateError,setGenerateError]=useState(""); const [saveBusy,setSaveBusy]=useState(false); const [saveStatus,setSaveStatus]=useState("");
+  useEffect(()=>{if(!auth){setAuthReady(true);return undefined;}let active=true;const unsubscribe=onAuthStateChanged(auth,nextUser=>{if(!active)return;setUser(nextUser);setAuthReady(true);setAuthBusy(false);});getRedirectResult(auth).catch(error=>{if(!active||error?.code==="auth/no-auth-event")return;setAuthError(authErrorMessage(error));setAuthBusy(false);});return()=>{active=false;unsubscribe();};},[]);
+  useEffect(()=>{if(!user){setDecks([]);setDeckError("");return undefined;}return subscribeToUserDecks(user.uid,setDecks,()=>setDeckError("Não foi possível sincronizar seus baralhos. Verifique as regras do Firestore."));},[user]);
+  useEffect(()=>{if(!db||!user){setSubscription({isPro:false,proPlanType:null,expiryDate:null});return undefined;}return onSnapshot(doc(db,"userStats",user.uid),snap=>{const data=snap.exists()?snap.data():{};const expiryDate=data.proExpiryDate||data.proExpiryDateIso||null;const expiryMs=expiryDate?new Date(expiryDate).getTime():NaN;setSubscription({isPro:Boolean(data.isPro)&&!(Number.isFinite(expiryMs)&&expiryMs<=Date.now()),proPlanType:data.proPlanType||null,expiryDate});},()=>setSubscription({isPro:false,proPlanType:null,expiryDate:null}));},[user]);
+  const allDeckCards=useMemo(()=>flattenDeckCards(decks),[decks]); const filteredDecks=useMemo(()=>{const q=query.trim().toLowerCase();if(!q)return decks;return decks.filter(deck=>`${deck.title} ${deck.category} ${deck.description}`.toLowerCase().includes(q));},[decks,query]); const dueCards=allDeckCards.filter(card=>card.dueDate&&new Date(card.dueDate)<=new Date());
+  async function login(){if(!auth||!firebaseConfigured||authBusy)return;setAuthBusy(true);setAuthError("");try{await authPersistenceReady;const provider=new GoogleAuthProvider();provider.setCustomParameters({prompt:"select_account"});await signInWithPopup(auth,provider);}catch(error){const code=error?.code||"";if(code.includes("popup-blocked")||code.includes("popup-failed")||code.includes("operation-not-supported-in-this-environment")){try{const provider=new GoogleAuthProvider();provider.setCustomParameters({prompt:"select_account"});await signInWithRedirect(auth,provider);return;}catch(redirectError){setAuthError(authErrorMessage(redirectError));}}else setAuthError(authErrorMessage(error));setAuthBusy(false);}}
+  async function logout(){if(!auth||authBusy)return;setAuthBusy(true);try{await signOut(auth);setTab("home");setSelectedDeck(null);setStudyCards([]);}catch(error){setAuthError(authErrorMessage(error));}finally{setAuthBusy(false);}}
+  function startStudy(deck,cards=deck?.cards||[]){setSelectedDeck(deck||null);setStudyCards(Array.isArray(cards)?cards:[]);setTab("study");}
+  function updateGenerateField(field,value){setGenerateForm(current=>({...current,[field]:value}));}
+  function addTopic(){const value=generateForm.topic.trim();if(!value)return;if(!topics.some(topic=>topic.toLowerCase()===value.toLowerCase()))setTopics(current=>[...current,value]);updateGenerateField("topic","");}
+  function removeTopic(index){setTopics(current=>current.filter((_,itemIndex)=>itemIndex!==index));}
+  async function generateCards(){const selectedTopics=topics.length?topics:(generateForm.topic.trim()?[generateForm.topic.trim()]:[]);if(!generateForm.subject.trim()||!selectedTopics.length){setGenerateError("Informe a matéria e pelo menos um tópico.");return;}if(!auth?.currentUser){setGenerateError("Entre com sua conta Google para gerar cards.");return;}setGenerateBusy(true);setGenerateError("");setSaveStatus("");setGenerated([]);try{const token=await getIdToken(auth.currentUser);const base=(import.meta.env.VITE_API_URL||import.meta.env.VITE_BACKEND_URL||"").replace(/\/$/,"");const count=Math.min(100,Math.max(1,Number(generateForm.count)||25));const response=await fetch(`${base}/api/gemini/generate-flashcards`,{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({prompt:`Gere flashcards para a matéria "${generateForm.subject.trim()}" focando exclusivamente nos tópicos: ${selectedTopics.join(", ")}.`,subject:generateForm.subject.trim(),topic:selectedTopics[0],selectedTopics,educationLevel:generateForm.level,count,difficulty:generateForm.difficulty,language:"pt",cardContentType:"definition",sourceType:"subject",existingFronts:allDeckCards.map(item=>item.front).filter(Boolean).slice(0,500)})});const payload=await response.json().catch(()=>({}));if(!response.ok)throw new Error(payload?.error||payload?.message||`Erro HTTP ${response.status}`);const cards=(Array.isArray(payload)?payload:payload.cards||payload.data?.cards||[]).map((item,index)=>({...item,id:item.id||`${Date.now()}-${index}`,front:item.front||item.question||"",back:item.back||item.answer||"",topic:item.topic||selectedTopics[index%selectedTopics.length],difficulty:item.difficulty||generateForm.difficulty,explanation:item.explanation||"",curiosity:item.curiosity||""})).filter(item=>item.front&&item.back);if(!cards.length)throw new Error("A IA não retornou cards válidos.");setGenerated(cards);}catch(error){setGenerateError(error?.message||"Não foi possível gerar os cards.");}finally{setGenerateBusy(false);}}
+  async function saveGeneratedDeck(){if(!generated.length||!user)return;setSaveBusy(true);setSaveStatus("");try{const title=(generateForm.deckName.trim()||generateForm.subject.trim()).toUpperCase();const result=await createUserDeck({userId:user.uid,title,category:generateForm.subject.trim(),description:`Baralho gerado no MemoriaFlash Web sobre ${topics.join(", ")||generateForm.topic.trim()}.`,cards:generated});setSaveStatus(`${result.cards.length} cards salvos e sincronizados com o aplicativo.`);setGenerated([]);setTab("library");}catch(error){setSaveStatus(error?.message||"Não foi possível salvar o baralho.");}finally{setSaveBusy(false);}}
+  if(!authReady)return <div className="loading-state"><span className="spinner"/> Verificando sua conta...</div>; if(!user)return <LoginScreen onLogin={login} busy={authBusy} error={authError}/>;
+  const nav=next=>{const icons={home:Sparkles,library:Library,study:BookOpen,generate:WandSparkles,stats:TrendingUp};const labels={home:"Início",library:"Meus baralhos",study:"Estudar",generate:"Gerar com IA",stats:"Progresso"};const Icon=icons[next];return <button className={tab===next?"nav-item active":"nav-item"} onClick={()=>setTab(next)}><Icon size={19}/> {labels[next]}</button>;};
+  if(tab==="study")return <StudySession user={user} deck={selectedDeck} cards={studyCards} onExit={()=>{setTab("library");setSelectedDeck(null);setStudyCards([]);}}/>;
+  return <div className="app-shell"><GeneratorStyles/><aside className="sidebar"><div className="brand"><div className="brand-mark"><Brain size={22}/></div><div><strong>MemoriaFlash</strong><span>{user.displayName||"Sua conta"}</span></div></div><nav>{nav("home")}{nav("library")}{nav("study")}{nav("generate")}{nav("stats")}</nav><div className="sidebar-bottom"><div className="streak-card"><div className="streak-icon">{subscription.isPro?<Crown size={18}/>:<BookOpen size={18}/>}</div><div><strong>{subscription.isPro?"Plano PRO":"Plano gratuito"}</strong><span>{subscription.isPro?"Sem anúncios":user.email}</span></div></div><button className="nav-item" onClick={logout} disabled={authBusy}><LogOut size={19}/> {authBusy?"Saindo...":"Sair"}</button>{deckError&&<small className="feedback-status">{deckError}</small>}</div></aside>
+  <main className="main"><header className="topbar"><div className="mobile-brand"><Brain size={20}/> MemoriaFlash</div><div className="top-search"><Search size={18}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar baralho..."/></div><button className="profile">{user.displayName?.[0]?.toUpperCase()||"M"}</button></header>
+  {tab==="home"&&<div className="page"><section className="hero"><div><span className="eyebrow"><Sparkles size={15}/> Conta sincronizada</span><h1>Continue seus estudos.</h1><p>Estude no computador os mesmos baralhos e cards do seu aplicativo mobile.</p><button className="primary" onClick={()=>setTab("library")}>Ver meus baralhos <ChevronRight size={18}/></button></div><div className="hero-orbit"><BookOpen size={92}/><span>{decks.length}</span><small>baralhos</small></div></section><AdSlot isPro={subscription.isPro} slot={import.meta.env.VITE_ADSENSE_HOME_SLOT}/><section className="section-head"><div><h2>Resumo</h2><p>{allDeckCards.length.toLocaleString("pt-BR")} cards sincronizados.</p></div></section><div className="today-grid"><div className="metric-card"><div className="metric-icon purple"><Library size={18}/></div><strong>{decks.length}</strong><span>baralhos</span></div><div className="metric-card"><div className="metric-icon blue"><BookOpen size={18}/></div><strong>{allDeckCards.length}</strong><span>cards</span></div><div className="metric-card"><div className="metric-icon green"><TrendingUp size={18}/></div><strong>{dueCards.length}</strong><span>para revisar</span></div><div className="metric-card"><div className="metric-icon orange"><Crown size={18}/></div><strong>{subscription.isPro?"PRO":"FREE"}</strong><span>{subscription.isPro?"sem anúncios":"plano atual"}</span></div></div><section className="section-head"><div><h2>Seus baralhos</h2></div></section><div className="subject-grid">{filteredDecks.slice(0,8).map(deck=><article className="subject-card" key={deck.id}><div className="subject-icon violet"><BookOpen size={20}/></div><div className="subject-main"><h3>{deck.title}</h3><span>{deck.cards.length} cards · {deck.category}</span></div><div className="progress"><div style={{width:"0%"}}/></div><div className="subject-foot"><span>Sincronizado</span><button onClick={()=>startStudy(deck)}>Estudar <ChevronRight size={15}/></button></div></article>)}</div>{!decks.length&&<div className="empty-state"><h3>Nenhum baralho sincronizado ainda</h3><p>Crie um baralho no aplicativo ou gere cards no site e salve.</p></div>}</div>}
+  {tab==="library"&&<div className="page"><div className="page-title"><span className="eyebrow"><Library size={15}/> Biblioteca</span><h1>Meus baralhos</h1><p>Baralhos sincronizados pela sua conta Firebase.</p></div><AdSlot isPro={subscription.isPro} slot={import.meta.env.VITE_ADSENSE_LIBRARY_SLOT}/><div className="library-list">{filteredDecks.map(deck=><article className="library-row" key={deck.id} onClick={()=>startStudy(deck)}><div className="subject-icon violet"><BookOpen size={20}/></div><div className="row-main"><h3>{deck.title}</h3><span>{deck.cards.length} cards · {deck.category}</span></div><div className="topic-pills"><span>{deck.isPublic?"Público":"Meu baralho"}</span></div><button className="icon-button" onClick={e=>{e.stopPropagation();startStudy(deck)}}><ChevronRight size={18}/></button></article>)}</div>{!filteredDecks.length&&<div className="empty-state"><h3>Nenhum baralho encontrado</h3><p>Os baralhos do aplicativo aparecerão aqui quando forem sincronizados.</p></div>}</div>}
+  {tab==="generate"&&<div className="page generator-page"><div className="page-title"><span className="eyebrow"><WandSparkles size={15}/> Inteligência artificial</span><h1>Gerar flashcards</h1><p>Crie seu material de estudo com a IA, revise e sincronize com o aplicativo.</p></div><AdSlot isPro={subscription.isPro} slot={import.meta.env.VITE_ADSENSE_GENERATE_SLOT}/><div className="mobile-studio-card"><div className="studio-heading"><div className="studio-icon"><WandSparkles size={22}/></div><div><strong>Estúdio de Flashcards</strong><span>Crie um baralho personalizado com IA</span></div></div><div className="studio-field"><label><span>📚 Matéria / Assunto <b>*</b></span><input value={generateForm.subject} onChange={e=>updateGenerateField("subject",e.target.value.toUpperCase())} placeholder="Ex.: DIREITO PENAL, BIOLOGIA, MATEMÁTICA..."/></label></div><div className="studio-field"><label><span>🗂️ Nome do Baralho <em>(opcional)</em></span><input value={generateForm.deckName} onChange={e=>updateGenerateField("deckName",e.target.value.toUpperCase())} placeholder={generateForm.subject.trim()||"Ex.: DIREITO PENAL — PARTE GERAL"}/></label></div><div className="studio-field"><label><span><GraduationCap size={14}/> Nível de estudo</span><select value={generateForm.level} onChange={e=>updateGenerateField("level",e.target.value)}><option value="medio">Ensino médio</option><option value="superior">Ensino superior</option><option value="concurso">Concurso</option></select></label></div><div className="studio-section"><div className="studio-section-title"><span><Tag size={14}/> Tópicos de estudo</span><small>Adicione um ou mais</small></div><div className="topic-entry"><input value={generateForm.topic} onChange={e=>updateGenerateField("topic",e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();addTopic();}}} placeholder="Ex.: Morfologia, Parte Geral, Mitocôndrias..."/><button type="button" onClick={addTopic}><Plus size={17}/> Adicionar</button></div>{topics.length>0&&<div className="selected-topics">{topics.map((topic,index)=><span key={`${topic}-${index}`}>{topic}<button type="button" onClick={()=>removeTopic(index)} aria-label={`Remover ${topic}`}><X size={13}/></button></span>)}</div>}</div><div className="studio-section"><div className="studio-section-title"><span>Quantidade de Cards</span><small>Escolha o tamanho da geração</small></div><div className="count-options">{[[25,"Rápido"],[50,"Completo"],[100,"Intensivo"]].map(([n,label])=><button key={n} type="button" className={Number(generateForm.count)===n?"selected":""} onClick={()=>updateGenerateField("count",n)}><strong>{n}</strong><small>{label}</small></button>)}</div></div><div className="studio-section"><div className="studio-section-title"><span>Dificuldade</span><small>Defina o nível dos cards</small></div><div className="difficulty-options">{[["easy","Fácil","Fundamentos"],["medium","Médio","Conceitos"],["hard","Difícil","Pegadinhas"],["specialist","Especialista","Avançado"]].map(([value,label,desc])=><button key={value} type="button" className={generateForm.difficulty===value?"selected":""} onClick={()=>updateGenerateField("difficulty",value)}><strong>{label}</strong><small>{desc}</small></button>)}</div></div>{generateError&&<div className="auth-error">{generateError}</div>}<button className="studio-generate" onClick={generateCards} disabled={generateBusy}><WandSparkles size={19}/> {generateBusy?"Criando flashcards com IA...":`Gerar ${generateForm.count} Flashcards com IA`}</button></div>{generated.length>0&&<><div className="section-head"><div><h2>{generated.length} cards gerados</h2><p>Revise o conteúdo antes de salvar no seu Firebase.</p></div></div><div className="generated-actions"><button className="primary" onClick={saveGeneratedDeck} disabled={saveBusy}><Library size={17}/> {saveBusy?"Salvando...":"Salvar e sincronizar com o aplicativo"}</button><button className="secondary" onClick={()=>startStudy(null,generated)}>Estudar agora</button></div>{saveStatus&&<div className="feedback-status">{saveStatus}</div>}<div className="generated-list">{generated.map((item,index)=><article className="generated-card" key={item.id||index}><div className="generated-card-head"><span>#{index+1}</span>{item.topic&&<small>{item.topic}</small>}</div><h3>{item.front}</h3><p>{item.back}</p>{item.explanation&&<small className="generated-explanation">💡 {item.explanation}</small>}</article>)}</div></>}</div>}
+  {tab==="stats"&&<div className="page"><div className="page-title"><span className="eyebrow"><TrendingUp size={15}/> Progresso</span><h1>Seu desempenho</h1><p>Dados associados à sua conta e aos cards sincronizados.</p></div><div className="today-grid"><div className="metric-card"><div className="metric-icon purple"><Library size={18}/></div><strong>{decks.length}</strong><span>baralhos</span></div><div className="metric-card"><div className="metric-icon blue"><BookOpen size={18}/></div><strong>{allDeckCards.length}</strong><span>cards</span></div><div className="metric-card"><div className="metric-icon green"><TrendingUp size={18}/></div><strong>{dueCards.length}</strong><span>para revisar</span></div><div className="metric-card"><div className="metric-icon orange"><Crown size={18}/></div><strong>{subscription.isPro?"PRO":"FREE"}</strong><span>{subscription.isPro?"sem anúncios":"com anúncios"}</span></div></div><AdSlot isPro={subscription.isPro} slot={import.meta.env.VITE_ADSENSE_STATS_SLOT}/></div>}
+  </main></div>;
 }
 
 createRoot(document.getElementById("root")).render(<App />);
