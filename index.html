@@ -4,10 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#171A2B" />
-    <meta name="description" content="MemoriaFlash — estude seus flashcards no computador e sincronize seus baralhos com o aplicativo mobile." />
-    <title>MemoriaFlash — Estude melhor</title>
+    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+    <meta name="description" content="MemoriaFlash é uma plataforma de estudos com flashcards para revisar conteúdos, acompanhar o progresso e sincronizar seus baralhos com o aplicativo mobile." />
+    <meta name="keywords" content="MemoriaFlash, flashcards, estudo, revisão, concurso, aprendizado, baralhos, cards" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="MemoriaFlash" />
+    <meta property="og:title" content="MemoriaFlash — Estude melhor" />
+    <meta property="og:description" content="Estude com flashcards, revise seus conteúdos e acompanhe seu progresso." />
+    <meta property="og:locale" content="pt_BR" />
+    <meta name="twitter:card" content="summary" />
+    <title>MemoriaFlash — Flashcards e estudos online</title>
+    <link rel="canonical" href="/" />
     <link rel="stylesheet" href="/progress.css" />
     <link rel="stylesheet" href="/library.css" />
+    <link rel="stylesheet" href="/help.css" />
     <style>
       .streak-card{display:none!important}
       .topbar .profile{display:none!important}
@@ -18,6 +28,14 @@
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <main style="max-width:900px;margin:40px auto;padding:24px;font-family:Arial,sans-serif">
+        <h1>MemoriaFlash — Flashcards e estudos online</h1>
+        <p>Estude com flashcards, organize seus baralhos, revise conteúdos e acompanhe seu progresso.</p>
+        <p>O MemoriaFlash também permite sincronizar seus estudos com o aplicativo mobile.</p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.jsx"></script>
+    <script src="/help.js" defer></script>
   </body>
 </html>
