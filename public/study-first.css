@@ -1,0 +1,23 @@
+/* MemoriaFlash Web — experiência focada em estudo */
+.library-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.library-row{position:relative;min-height:88px;border-radius:18px!important;padding:18px!important;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease!important;cursor:pointer}
+.library-row:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(28,35,58,.08);border-color:#d7d8e8!important}
+.library-row .row-main h3{font-size:15px!important;letter-spacing:-.15px}
+.library-row .row-main span{font-size:11px!important}
+.library-row .topic-pills{margin-left:auto;margin-right:44px}
+.library-row .topic-pills span{background:#f2f1ff!important;color:#6758e8!important;border:0!important}
+.library-row .icon-button{width:34px!important;height:34px!important;border-radius:10px!important;background:#f3f2ff!important;color:#6758e8!important}
+.library-row::after{content:"Estudar";position:absolute;right:18px;bottom:11px;font-size:9px;font-weight:800;color:#8a8fa2;opacity:0;transform:translateY(3px);transition:.18s ease}
+.library-row:hover::after{opacity:1;transform:none}
+.library-study-meta{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:10px;color:#7b8398}
+.library-due{color:#c46d2b;font-weight:800}
+.home-deck{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.home-deck:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(28,35,58,.08);border-color:#d7d8e8}
+.home-review{box-shadow:0 8px 24px rgba(28,35,58,.04)}
+.empty-state{padding:52px 24px!important;text-align:center!important;background:#fff;border:1px dashed #d9dce7!important;border-radius:18px!important}
+.empty-state h3{margin:0 0 7px!important;font-size:17px!important}
+.empty-state p{margin:0!important;color:#7b8398!important;font-size:12px!important;line-height:1.6!important}
+@media(max-width:900px){.library-list{grid-template-columns:1fr}}
+@media(max-width:600px){.library-row{padding:15px!important}.library-row .topic-pills{display:none}.library-row::after{display:none}}
+/* A criação de conteúdo pertence ao aplicativo mobile, não ao site. */
+.generator-page{display:none!important}
