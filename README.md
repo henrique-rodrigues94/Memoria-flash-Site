@@ -2,7 +2,7 @@
 
 Site web de estudos do MemoriaFlash, alinhado com o schema oficial do aplicativo.
 
-Branch: `web/firebase-data-layer`
+Branch: `main`
 
 ## Stack
 
@@ -46,34 +46,30 @@ O `firebase.json` aponta para a pasta `dist` com rewrites para SPA (toda rota ca
 ### Checklist pós-deploy
 
 1. **Domínio autorizado**: adicione `flashcardsia-a2f43.web.app` (e qualquer domínio customizado) em Firebase Console → Authentication → Settings → **Authorized domains**.
-2. **Regras do Firestore**: revise o `firestore.rules` para permitir que usuários autenticados leiam/criem seus próprios decks.
-3. **Backend de IA**: adicione `VITE_API_URL` apontando para a URL HTTPS do backend para ativar a geração de cards por IA.
-4. **AdSense**: preencha os slots no `.env` com os IDs aprovados pelo Google para ativar a publicidade.
+2. **Regras do Firestore**: revise as regras para permitir que usuários autenticados leiam/criem seus próprios decks (coleção `decks`).
+3. **AdSense**: preencha os slots no `.env` com os IDs aprovados pelo Google para ativar a publicidade.
 
 ## Estrutura do projeto
 
 ```text
 src/
 ├── components/
-│   ├── AdSlot.jsx
-│   ├── AuthGate.jsx
-│   ├── EmptyState.jsx
-│   ├── Feedback.jsx
-│   ├── LoadingState.jsx
-│   ├── StudyHeader.jsx
-│   └── StudySession.jsx
+│   └── StudySession.jsx      # sessão de estudo imersiva (SRS + feedback)
 ├── lib/
-│   └── firebase.js
+│   └── firebase.js           # inicialização do Firebase (Auth + Firestore)
 ├── services/
-│   ├── auth.js
-│   ├── content.js
-│   ├── decks.js
-│   ├── feedback.js
-│   ├── generation.js
-│   └── progress.js
-├── main.jsx
-└── styles.css
+│   ├── decks.js              # sincronização de baralhos do usuário
+│   ├── feedback.js           # feedback de cards
+│   ├── progress.js           # progresso/revisão de cards
+│   ├── auth.js               # autenticação (legado — centralizada no main.jsx)
+│   ├── content.js            # leitura de conteúdo do schema oficial (legado)
+│   └── generation.js         # geração por IA (desativada no momento)
+├── main.jsx                  # app principal + autenticação
+├── styles.css                # estilos gerais
+└── study.css                 # estilos da sessão de estudo
 ```
+
+> O app é renderizado de forma **monolítica** em `src/main.jsx` (login, home, biblioteca, progresso e sessão de estudo). Apenas `decks.js`, `feedback.js` e `progress.js` são usados ativamente; `auth.js`, `content.js` e `generation.js` permanecem no repositório como legado.
 
 ## Variáveis de ambiente
 
@@ -93,7 +89,7 @@ Variáveis disponíveis:
 - `VITE_FIREBASE_STORAGE_BUCKET`
 - `VITE_FIREBASE_MESSAGING_SENDER_ID`
 - `VITE_FIREBASE_APP_ID`
-- `VITE_API_URL` — URL do backend (dev: `http://localhost:3000`; produção: HTTPS do backend).
+- `VITE_API_URL` — URL do backend (apenas legado, usado por `generation.js`; dev: `http://localhost:3000`).
 - `VITE_ADSENSE_CLIENT` — `ca-pub-...` do AdSense.
 - `VITE_ADSENSE_HOME_SLOT`, `VITE_ADSENSE_LIBRARY_SLOT`, `VITE_ADSENSE_STUDY_SLOT`, `VITE_ADSENSE_GENERATE_SLOT`, `VITE_ADSENSE_STATS_SLOT` — slots de anúncio por página (deixe vazios até a aprovação do Google).
 
@@ -161,40 +157,17 @@ Arquivos: `src/services/decks.js` (`subscribeToUserDecks`, `flattenDeckCards`).
 
 > Importante: o app mobile mantém uma camada local (`localStorage`) e também possui o serviço de sincronização Firestore. Para um deck aparecer no site, ele precisa estar salvo na coleção `decks` do Firebase com `userId` igual ao UID do Google.
 
-## Geração sincronizada (IA)
+## Sessão de estudo (SRS)
 
-O site **não** cria um banco próprio de flashcards. A geração usa o mesmo endpoint do backend do aplicativo:
+A sessão de estudo (`src/components/StudySession.jsx`) implementa um sistema de repetição espaçada (SRS):
 
-```text
-POST /api/gemini/generate-flashcards
-```
+- Ordena a fila por cards **vencidos** primeiro (por `dueDate`) e depois por menor número de repetições.
+- Botões **Difícil / Bom / Fácil** com cálculo de intervalo, fator de facilidade (SM-2 simplificado) e nova `dueDate`.
+- Salva o progresso via `saveCardProgress` (`src/services/progress.js`).
+- Permite feedback por card via `saveCardFeedback` (`src/services/feedback.js`).
 
-Com:
+## Geração de cards (criação manual)
 
-```text
-sourceType = subject
-subject
-topic
-educationLevel
-cardContentType
-```
+A geração de cards por IA foi **removida** do site (decisão de manter o foco apenas em estudar). O código ainda contém a aba de **criação manual** de flashcards (`src/main.jsx` → `tab==="generate"`), mas ela **não aparece na navegação** (Início, Meus baralhos, Progresso).
 
-O backend consulta o banco compartilhado antes da IA e salva os cards gerados no `cardBuckets` oficial.
-
-```text
-Mobile
-   │
-   ├── gera/estuda ──┐
-   │                 │
-Web ── gera/estuda ──┼── Firebase/cardBuckets
-                     │
-Content Agent ───────┘
-```
-
-Serviço: `src/services/generation.js` (funções `generateFlashcards` e `getAiStatus`).
-
-### Privacidade
-
-O schema atual do backend usa `cardBuckets` como banco de conteúdo **compartilhado** (leitura pública; escrita feita pelo servidor). Cards gerados por `sourceType=subject` são conteúdo compartilhado, não um baralho privado por usuário.
-
-Se o produto precisar de "Meus cards" privados, isso deve ser uma segunda camada do Firebase, por exemplo `users/{uid}/cards/{cardId}` — **sem** misturar com `cardBuckets`. Essa separação deve ser implementada somente quando o aplicativo mobile também passar a usar o mesmo contrato para cards privados.
+O serviço `src/services/generation.js` (`generateFlashcards` e `getAiStatus`) permanece no repositório apenas como legado — não é importado por nenhum arquivo ativo.
