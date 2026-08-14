@@ -1,8 +1,17 @@
 # MemoriaFlash Web
 
-Site web de estudos do MemoriaFlash, alinhado com o schema oficial do aplicativo.
+Site web complementar ao aplicativo MemoriaFlash, com foco em **estudar pelo computador** usando os baralhos e cards sincronizados do Firebase.
 
 Branch: `main`
+
+## Funcionamento
+
+O site tem duas camadas:
+
+1. **Página pública** (`index.html`): landing page com SEO, FAQ e orientação de login — sem conteúdo pessoal.
+2. **Área privada** (React em `src/main.jsx`): liberada após login com Google, onde ficam a home, a biblioteca de baralhos, a sessão de estudo e o progresso.
+
+A **criação e geração de baralhos e cards acontece no aplicativo mobile**; o site consome os conteúdos já sincronizados.
 
 ## Stack
 
@@ -52,24 +61,32 @@ O `firebase.json` aponta para a pasta `dist` com rewrites para SPA (toda rota ca
 ## Estrutura do projeto
 
 ```text
+index.html                  # página pública (landing) + carrega o app React
+library.css                 # estilos da biblioteca de baralhos
+public/
+├── help.css / help.js      # central de ajuda e feedback
+├── login.css / login.js    # orientação do fluxo de login Google
+├── progress.css            # estilos da tela de progresso
+├── study-first.css         # estilos de estudo
+└── robots.txt              # indexação (bloqueia /src/ e /node_modules/)
 src/
 ├── components/
-│   └── StudySession.jsx      # sessão de estudo imersiva (SRS + feedback)
+│   └── StudySession.jsx    # sessão de estudo imersiva (SRS + feedback)
 ├── lib/
-│   └── firebase.js           # inicialização do Firebase (Auth + Firestore)
+│   └── firebase.js         # inicialização do Firebase (Auth + Firestore)
 ├── services/
-│   ├── decks.js              # sincronização de baralhos do usuário
-│   ├── feedback.js           # feedback de cards
-│   ├── progress.js           # progresso/revisão de cards
-│   ├── auth.js               # autenticação (legado — centralizada no main.jsx)
-│   ├── content.js            # leitura de conteúdo do schema oficial (legado)
-│   └── generation.js         # geração por IA (desativada no momento)
-├── main.jsx                  # app principal + autenticação
-├── styles.css                # estilos gerais
-└── study.css                 # estilos da sessão de estudo
+│   ├── decks.js            # sincronização de baralhos do usuário
+│   ├── feedback.js         # feedback de cards
+│   ├── progress.js         # progresso/revisão de cards
+│   ├── auth.js             # autenticação (legado — centralizada no main.jsx)
+│   ├── content.js          # leitura de conteúdo do schema oficial (legado)
+│   └── generation.js       # geração por IA (legado, não usado)
+├── main.jsx                # app privado (login, home, biblioteca, estudo, progresso)
+├── styles.css              # estilos gerais
+└── study.css               # estilos da sessão de estudo
 ```
 
-> O app é renderizado de forma **monolítica** em `src/main.jsx` (login, home, biblioteca, progresso e sessão de estudo). Apenas `decks.js`, `feedback.js` e `progress.js` são usados ativamente; `auth.js`, `content.js` e `generation.js` permanecem no repositório como legado.
+> A área privada é renderizada de forma **monolítica** em `src/main.jsx`. Apenas `decks.js`, `feedback.js` e `progress.js` são usados ativamente; `auth.js`, `content.js` e `generation.js` permanecem como legado.
 
 ## Variáveis de ambiente
 
@@ -95,7 +112,7 @@ Variáveis disponíveis:
 
 ## Camada Firestore
 
-O site está alinhado ao schema oficial do aplicativo:
+O schema oficial do aplicativo usa a hierarquia de conteúdo:
 
 ```text
 subjects/{sha1(subject)}
@@ -107,15 +124,7 @@ cardBuckets/{sha1(subject|topic|level|cardType)}
 cards[]
 ```
 
-O site **não** faz consultas compostas em `curricula` ou `cardBuckets` — ele calcula o mesmo SHA-1 usado pelo backend e usa `getDoc()` diretamente:
-
-- 1 leitura por currículo selecionado;
-- 1 leitura por bucket de cards;
-- menor chance de exigir índices compostos;
-- menos consultas;
-- alinhamento com o backend oficial.
-
-Arquivo principal: `src/services/content.js`.
+No entanto, o site atual **estuda a partir da coleção `decks`** (baralhos do usuário sincronizados), não de `curricula`/`cardBuckets`. O arquivo `src/services/content.js` contém a leitura do schema de conteúdo (cálculo de SHA-1, `getDoc()` direto), mas é **legado** — não é importado por nenhum arquivo ativo.
 
 ## Correção do login Google
 
@@ -166,8 +175,8 @@ A sessão de estudo (`src/components/StudySession.jsx`) implementa um sistema de
 - Salva o progresso via `saveCardProgress` (`src/services/progress.js`).
 - Permite feedback por card via `saveCardFeedback` (`src/services/feedback.js`).
 
-## Geração de cards (criação manual)
+## Criação de cards
 
-A geração de cards por IA foi **removida** do site (decisão de manter o foco apenas em estudar). O código ainda contém a aba de **criação manual** de flashcards (`src/main.jsx` → `tab==="generate"`), mas ela **não aparece na navegação** (Início, Meus baralhos, Progresso).
+O site **não cria nem gera cards**: a criação e a geração de conteúdo acontecem no aplicativo mobile. A aba de **criação manual** (`src/main.jsx` → `tab==="generate"`) existe no código, mas **não aparece na navegação** (Início, Meus baralhos, Progresso) — é inacessível pela interface.
 
 O serviço `src/services/generation.js` (`generateFlashcards` e `getAiStatus`) permanece no repositório apenas como legado — não é importado por nenhum arquivo ativo.
