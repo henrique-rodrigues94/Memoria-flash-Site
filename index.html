@@ -7,7 +7,13 @@
     <meta name="description" content="MemoriaFlash — estude seus flashcards no computador e sincronize seus baralhos com o aplicativo mobile." />
     <title>MemoriaFlash — Estude melhor</title>
     <link rel="stylesheet" href="/progress.css" />
-    <style>.streak-card{display:none!important}</style>
+    <style>
+      .streak-card{display:none!important}
+      .topbar .profile{display:none!important}
+      .progress-metrics{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+      .progress-metrics .progress-metric:last-child{display:none!important}
+      @media(max-width:760px){.progress-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+    </style>
   </head>
   <body>
     <div id="root"></div>
