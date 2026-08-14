@@ -31,6 +31,10 @@ lerna-debug.log*
 *.sln
 *.sw?
 
+# Firebase
+.firebase/
+.firebaserc
+
 # Sistema operacional
 .DS_Store
 Thumbs.db
