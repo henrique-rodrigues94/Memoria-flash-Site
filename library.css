@@ -1,0 +1,235 @@
+/* =========================================================
+   MemoriaFlash — Biblioteca / Meus baralhos
+   Melhoria visual sem alterar a lógica de sincronização.
+   ========================================================= */
+
+.library-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+.library-row {
+  position: relative;
+  min-height: 142px;
+  padding: 22px 20px;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  column-gap: 15px;
+  row-gap: 14px;
+  align-items: center;
+  overflow: hidden;
+  background: linear-gradient(145deg, #ffffff 0%, #fafaff 100%);
+  border: 1px solid #e5e6ef;
+  border-radius: 18px;
+  box-shadow: 0 8px 26px rgba(35, 34, 70, .045);
+  cursor: pointer;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+
+.library-row::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 18px;
+  bottom: 18px;
+  width: 4px;
+  border-radius: 0 8px 8px 0;
+  background: #6d5dfc;
+}
+
+.library-row::after {
+  content: "";
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  right: -85px;
+  top: -85px;
+  border-radius: 50%;
+  background: rgba(109, 93, 252, .045);
+  pointer-events: none;
+}
+
+.library-row:hover {
+  transform: translateY(-3px);
+  border-color: #cbc6ff;
+  box-shadow: 0 16px 38px rgba(45, 39, 105, .10);
+}
+
+.library-row:active {
+  transform: translateY(-1px);
+}
+
+.library-row .subject-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 15px;
+  position: relative;
+  z-index: 1;
+  box-shadow: inset 0 0 0 1px rgba(109, 93, 252, .07);
+}
+
+.library-row:nth-child(4n + 2) .subject-icon {
+  color: #4e7df4;
+  background: #edf2ff;
+}
+
+.library-row:nth-child(4n + 3) .subject-icon {
+  color: #23a7c8;
+  background: #e8f9fc;
+}
+
+.library-row:nth-child(4n + 4) .subject-icon {
+  color: #ed8a37;
+  background: #fff1e6;
+}
+
+.library-row:nth-child(4n + 2)::before {
+  background: #4e7df4;
+}
+
+.library-row:nth-child(4n + 3)::before {
+  background: #23a7c8;
+}
+
+.library-row:nth-child(4n + 4)::before {
+  background: #ed8a37;
+}
+
+.library-row .row-main {
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.library-row .row-main h3 {
+  margin: 0 0 7px;
+  color: #171a2b;
+  font-size: 16px;
+  font-weight: 850;
+  letter-spacing: -.35px;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.library-row .row-main span {
+  display: block;
+  color: #7b8092;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.library-row .topic-pills {
+  grid-column: 2;
+  grid-row: 2;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.library-row .topic-pills span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 5px 9px;
+  color: #666b7d;
+  background: #f3f4f9;
+  border: 1px solid #e8e9f0;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.library-row .icon-button {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #e7e8f0;
+  background: #fff;
+  color: #73788b;
+  border-radius: 11px;
+  position: relative;
+  z-index: 2;
+  transition: background .18s ease, color .18s ease, transform .18s ease;
+}
+
+.library-row:hover .icon-button {
+  color: #fff;
+  background: #6d5dfc;
+  border-color: #6d5dfc;
+  transform: translateX(2px);
+}
+
+/* Cabeçalho da biblioteca */
+.page:has(.library-list) .page-title {
+  margin-bottom: 25px;
+}
+
+.page:has(.library-list) .page-title h1 {
+  font-size: clamp(30px, 3vw, 38px);
+  letter-spacing: -1.7px;
+  margin-top: 9px;
+}
+
+.page:has(.library-list) .page-title p {
+  font-size: 13px;
+  color: #7b8092;
+}
+
+.page:has(.library-list) .page-title .eyebrow {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #efedff;
+  color: #6656ea;
+  font-size: 9px;
+  letter-spacing: .7px;
+}
+
+@media (max-width: 900px) {
+  .library-list {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .library-row {
+    min-height: 126px;
+    padding: 18px 16px;
+  }
+}
+
+@media (max-width: 560px) {
+  .library-row {
+    grid-template-columns: 46px minmax(0, 1fr) 34px;
+    column-gap: 12px;
+    padding: 16px 14px;
+    border-radius: 16px;
+  }
+
+  .library-row .subject-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+  }
+
+  .library-row .row-main h3 {
+    font-size: 14px;
+  }
+
+  .library-row .row-main span {
+    font-size: 10px;
+  }
+
+  .library-row .topic-pills {
+    grid-column: 2;
+  }
+
+  .library-row .icon-button {
+    width: 34px;
+    height: 34px;
+  }
+}
