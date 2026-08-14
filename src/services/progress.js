@@ -1,9 +1,4 @@
-import {
-  doc,
-  getDoc,
-  serverTimestamp,
-  setDoc,
-} from "firebase/firestore";
+import { collection, doc, getDoc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 import { db, firebaseConfigured } from "../lib/firebase";
 
 export async function getCardProgress(userId, cardId) {
@@ -32,4 +27,20 @@ export async function saveCardProgress(userId, cardId, data = {}) {
   );
 
   return { persisted: true };
+}
+
+export function subscribeToUserProgress(userId, onData, onError) {
+  if (!firebaseConfigured || !db || !userId) {
+    onData([]);
+    return () => {};
+  }
+
+  return onSnapshot(
+    collection(db, "users", userId, "progress"),
+    (snapshot) => onData(snapshot.docs.map((item) => ({
+      id: item.id,
+      ...item.data(),
+    }))),
+    onError
+  );
 }
