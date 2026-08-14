@@ -91,7 +91,9 @@ export async function createUserDeck({
 }) {
   if (!db || !userId) throw new Error("Usuário não autenticado.");
   if (!title?.trim()) throw new Error("Informe o nome do baralho.");
-  if (!Array.isArray(cards) || !cards.length) throw new Error("Nenhum card para salvar.");
+  if (!Array.isArray(cards) || !cards.length) {
+    throw new Error("Nenhum card para salvar.");
+  }
 
   const normalizedCards = cards.map((card, index) => ({
     id: card.id || `${Date.now()}-${index}`,
