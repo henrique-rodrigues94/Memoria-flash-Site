@@ -168,7 +168,7 @@ nav { display: grid; gap: 6px; }
   .subject-grid { grid-template-columns: 1fr; }
   .library-row { align-items: flex-start; }
   .topic-pills { display: none; }
-  .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 66px; background: rgba(255,255,255,.96); backdrop-filter: blur(12px); border-top: 1px solid var(--line); z-index: 30; display: grid; grid-template-columns: repeat(4,1fr); }
+  .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 66px; background: rgba(255,255,255,.96); backdrop-filter: blur(12px); border-top: 1px solid var(--line); z-index: 30; display: grid; grid-template-columns: repeat(3,1fr); }
   .mobile-nav button { border: 0; background: transparent; color: #878b9b; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 9px; }
   .mobile-nav button.active { color: var(--purple); }
 }
