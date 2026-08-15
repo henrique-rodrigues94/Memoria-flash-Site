@@ -46,6 +46,6 @@ body.app-mode #public-site{display:none!important}body.app-mode #root{display:bl
 <script type="module">import { createRoot } from "react-dom/client"; globalThis.createRoot = createRoot;</script>
 <script type="module" src="/src/main.jsx"></script>
 <script src="/login.js" defer></script>
-<script src="/help.js" defer></script>
+<!-- O antigo help.js enviava feedback por mailto. O fluxo atual usa HelpPage + Firestore. -->
 </body>
 </html>
