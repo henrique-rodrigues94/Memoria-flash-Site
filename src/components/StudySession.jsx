@@ -4,23 +4,246 @@ import { saveCardFeedback } from "../services/feedback";
 import { saveCardProgress } from "../services/progress";
 import "../study.css";
 
-const REASONS = ["Pergunta confusa","Resposta incorreta","Explicação ruim","Muito fácil","Muito difícil","Conteúdo repetido","Desatualizado"];
-function calculateSrs(card, grade) { const now = new Date(); const reps = Number(card.reps || 0) + 1; const efactor = Number(card.efactor || 2.5); let interval; let nextEf = efactor; if (grade === "hard") { interval = reps <= 1 ? 1 : Math.max(1, Math.round(Number(card.interval || 1) * 1.2)); nextEf = Math.max(1.3, efactor - 0.15); } else if (grade === "easy") { interval = reps === 1 ? 1 : reps === 2 ? 4 : Math.max(1, Math.round(Number(card.interval || 1) * efactor * 1.3)); nextEf = Math.min(3, efactor + 0.15); } else { interval = reps === 1 ? 1 : reps === 2 ? 3 : Math.max(1, Math.round(Number(card.interval || 1) * efactor)); } return { reps, interval, efactor: nextEf, dueDate: new Date(now.getTime() + interval * 86400000).toISOString(), lastReviewed: now.toISOString() }; }
-function prepareQueue(cards) { const now = Date.now(); return [...cards].sort((a,b)=>{ const aDue=a.dueDate?new Date(a.dueDate).getTime():0; const bDue=b.dueDate?new Date(b.dueDate).getTime():0; const aIsDue=aDue>0&&aDue<=now; const bIsDue=bDue>0&&bDue<=now; if(aIsDue!==bIsDue)return aIsDue?-1:1; if(aIsDue&&bIsDue)return aDue-bDue; return Number(a.reps||0)-Number(b.reps||0); }); }
-function formatDuration(seconds){ const total=Math.max(0,Math.floor(seconds)); const minutes=Math.floor(total/60); const secs=total%60; return minutes===0?`${secs}s`:`${minutes}min ${String(secs).padStart(2,"0")}s`; }
-const minimalHeaderStyle={background:"transparent",borderBottom:0,boxShadow:"none",position:"absolute",top:0,left:0,right:0,zIndex:5,padding:"14px 20px"};
+const REASONS = ["Pergunta confusa", "Resposta incorreta", "Explicação ruim", "Muito fácil", "Muito difícil", "Conteúdo repetido", "Desatualizado"];
 
-export default function StudySession({user,deck,cards=[],onExit,onHelp}){
-  const queue=useMemo(()=>prepareQueue(cards),[cards]); const [index,setIndex]=useState(0); const [revealed,setRevealed]=useState(false); const [saving,setSaving]=useState(false); const [finished,setFinished]=useState(false); const [sessionStartedAt,setSessionStartedAt]=useState(()=>Date.now()); const [elapsedSeconds,setElapsedSeconds]=useState(0); const [sessionGrades,setSessionGrades]=useState({hard:0,good:0,easy:0}); const [feedback,setFeedback]=useState(null); const [feedbackReason,setFeedbackReason]=useState(""); const [feedbackComment,setFeedbackComment]=useState(""); const [feedbackStatus,setFeedbackStatus]=useState("");
-  const card=queue[index]; const isEmpty=queue.length===0; const progress=queue.length?Math.round(((index+1)/queue.length)*100):0; const totalAnswered=sessionGrades.hard+sessionGrades.good+sessionGrades.easy;
-  useEffect(()=>{ const started=Date.now(); setIndex(0);setRevealed(false);setFinished(false);setSessionStartedAt(started);setElapsedSeconds(0);setSessionGrades({hard:0,good:0,easy:0});setFeedback(null);setFeedbackReason("");setFeedbackComment("");setFeedbackStatus(""); },[cards]);
-  useEffect(()=>{ if(finished||isEmpty)return undefined; const timer=window.setInterval(()=>setElapsedSeconds(Math.floor((Date.now()-sessionStartedAt)/1000)),1000); return()=>window.clearInterval(timer); },[finished,isEmpty,sessionStartedAt]);
-  function resetFeedback(){setFeedback(null);setFeedbackReason("");setFeedbackComment("");setFeedbackStatus("");} function revealCard(){if(!card||saving||finished)return;setRevealed(value=>!value);}
-  useEffect(()=>{ function handleKeyDown(event){ if(event.ctrlKey||event.altKey||event.metaKey)return; const target=event.target; const isTyping=target instanceof HTMLInputElement||target instanceof HTMLTextAreaElement||target instanceof HTMLSelectElement||target?.isContentEditable; if(isTyping)return; if(event.key==="Escape"){event.preventDefault();if(!saving)onExit?.();return;} if(event.key===" "||event.key==="Enter"){event.preventDefault();revealCard();return;} if(revealed&&!saving){if(event.key==="1"){event.preventDefault();gradeCard("hard");}else if(event.key==="2"){event.preventDefault();gradeCard("good");}else if(event.key==="3"){event.preventDefault();gradeCard("easy");}} } window.addEventListener("keydown",handleKeyDown); return()=>window.removeEventListener("keydown",handleKeyDown); },[revealed,saving,card,onExit]);
-  async function gradeCard(grade){ if(!card||saving||!user||!revealed)return; setSaving(true);setFeedbackStatus(""); try{ const srs=calculateSrs(card,grade); await saveCardProgress(user.uid,card.id,{reviewed:true,grade,deckId:deck?.id||card.deckId||null,...srs}); setSessionGrades(current=>({...current,[grade]:current[grade]+1})); resetFeedback(); if(index>=queue.length-1){setElapsedSeconds(Math.floor((Date.now()-sessionStartedAt)/1000));setFinished(true);}else{setIndex(value=>value+1);setRevealed(false);} }catch(error){setFeedbackStatus(error?.message||"Não foi possível salvar seu progresso.");}finally{setSaving(false);} }
-  async function sendFeedback(rating){ if(!card||!user)return; setFeedback(rating); if(rating==="down")return; setFeedbackStatus("Salvando feedback..."); try{const result=await saveCardFeedback({userId:user.uid,card,rating:"positive"});setFeedbackStatus(result.persisted?"Feedback salvo.":"Não foi possível sincronizar agora.");}catch{setFeedbackStatus("Não foi possível sincronizar agora.");} }
-  async function sendNegativeFeedback(){ if(!card||!feedbackReason||!user)return; setFeedbackStatus("Salvando feedback..."); try{const result=await saveCardFeedback({userId:user.uid,card,rating:"negative",reason:feedbackReason,comment:feedbackComment});setFeedbackStatus(result.persisted?"Obrigado pelo feedback.":"Não foi possível sincronizar agora.");setFeedback("down-sent");}catch{setFeedbackStatus("Não foi possível sincronizar agora.");} }
-  if(finished)return <main className="study-shell study-complete"><header className="study-topbar" style={minimalHeaderStyle}><button className="study-exit" onClick={onExit}><ArrowLeft size={18}/> Sair do estudo</button></header><section className="study-complete-card"><div className="complete-icon"><Check size={34}/></div><span className="study-kicker">Sessão concluída</span><h1>Ótimo trabalho!</h1><p>Seu progresso foi salvo. Veja o resumo desta sessão antes de voltar para seus baralhos.</p><div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,margin:"22px 0"}}><div className="complete-stat"><strong>{totalAnswered}</strong><small>estudados</small></div><div className="complete-stat"><strong>{sessionGrades.hard}</strong><small>difíceis</small></div><div className="complete-stat"><strong>{sessionGrades.good}</strong><small>bons</small></div><div className="complete-stat"><strong>{sessionGrades.easy}</strong><small>fáceis</small></div></div><div className="study-time">Tempo de estudo: <strong>{formatDuration(elapsedSeconds)}</strong></div><button className="primary" onClick={onExit}>Voltar para meus baralhos</button></section></main>;
-  if(isEmpty)return <main className="study-shell study-complete"><header className="study-topbar" style={minimalHeaderStyle}><button className="study-exit" onClick={onExit}><ArrowLeft size={18}/> Sair do estudo</button></header><section className="study-complete-card"><div className="complete-icon empty"><Clock3 size={32}/></div><span className="study-kicker">Nenhum card disponível</span><h1>Não há cards para estudar.</h1><p>Este baralho ainda não possui cards disponíveis para esta sessão.</p><button className="primary" onClick={onExit}>Voltar para meus baralhos</button></section></main>;
-  return <main className="study-shell"><header className="study-topbar" style={minimalHeaderStyle}><button className="study-exit" onClick={onExit} disabled={saving}><ArrowLeft size={18}/> Sair do estudo</button></header><div className="study-progress-line"><div style={{width:`${Math.max(4,progress)}%`}}/></div><section className="study-stage"><article className={revealed?"study-card revealed":"study-card"} onClick={revealCard} role="button" tabIndex={0} aria-label={revealed?"Virar o card":"Mostrar resposta"} onKeyDown={event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();revealCard();}}}><div className="study-card-inner"><span className="study-card-label">{revealed?"RESPOSTA":"PERGUNTA"}</span><h1>{revealed?card.back:card.front}</h1>{revealed&&<div className="study-card-extra">{card.explanation&&<div><strong>📘 Explicação</strong><p>{String(card.explanation).replace(/^\s*Explicação\s*:\s*/i,"")}</p></div>}{card.curiosity&&<div><strong>💡 Curiosidade</strong><p>{card.curiosity}</p></div>}</div>}</div></article><div className="study-actions">{!revealed?<div className="study-hint">Responda mentalmente antes de revelar.</div>:<><div className="rating-title">Como você se saiu?</div><div className="rating-actions"><button className="rating rating-hard" onClick={event=>{event.stopPropagation();gradeCard("hard");}} disabled={saving}><RotateCcw size={18}/><span><strong>Difícil</strong><small>Revisar logo</small></span></button><button className="rating rating-good" onClick={event=>{event.stopPropagation();gradeCard("good");}} disabled={saving}><Clock3 size={18}/><span><strong>Bom</strong><small>Revisar depois</small></span></button><button className="rating rating-easy" onClick={event=>{event.stopPropagation();gradeCard("easy");}} disabled={saving}><ThumbsUp size={18}/><span><strong>Fácil</strong><small>Intervalo maior</small></span></button></div></>}</div><div className="study-feedback"><span>Qualidade do conteúdo</span><button className={feedback==="up"?"content-feedback active":"content-feedback"} onClick={event=>{event.stopPropagation();sendFeedback("up");}}><ThumbsUp size={15}/> Gostei</button><button className={feedback==="down"||feedback==="down-sent"?"content-feedback active negative":"content-feedback"} onClick={event=>{event.stopPropagation();sendFeedback("down");}}><ThumbsDown size={15}/> Precisa melhorar</button></div><div className="study-report-row"><button type="button" className="study-report-button" onClick={event=>{event.stopPropagation();onHelp?.(card);}}><Flag size={16}/> <span>Card com problema</span></button></div>{feedback==="down"&&<div className="feedback-panel"><button className="feedback-close" onClick={()=>setFeedback(null)} aria-label="Fechar feedback"><X size={16}/></button><strong>O que precisa melhorar?</strong><div className="reason-list">{REASONS.map(reason=><button key={reason} className={feedbackReason===reason?"reason selected":"reason"} onClick={()=>setFeedbackReason(reason)}>{reason}</button>)}</div><textarea value={feedbackComment} onChange={event=>setFeedbackComment(event.target.value)} placeholder="Comentário opcional..." rows={2}/><button className="primary small" disabled={!feedbackReason} onClick={sendNegativeFeedback}>Enviar feedback</button></div>}{feedbackStatus&&<div className="study-status">{feedbackStatus}</div>}</section></main>;
+function calculateSrs(card, grade) {
+  const now = new Date();
+  const reps = Number(card.reps || 0) + 1;
+  const efactor = Number(card.efactor || 2.5);
+  let interval;
+  let nextEf = efactor;
+  if (grade === "hard") {
+    interval = reps <= 1 ? 1 : Math.max(1, Math.round(Number(card.interval || 1) * 1.2));
+    nextEf = Math.max(1.3, efactor - 0.15);
+  } else if (grade === "easy") {
+    interval = reps === 1 ? 1 : reps === 2 ? 4 : Math.max(1, Math.round(Number(card.interval || 1) * efactor * 1.3));
+    nextEf = Math.min(3, efactor + 0.15);
+  } else {
+    interval = reps === 1 ? 1 : reps === 2 ? 3 : Math.max(1, Math.round(Number(card.interval || 1) * efactor));
+  }
+  return {
+    reps,
+    interval,
+    efactor: nextEf,
+    dueDate: new Date(now.getTime() + interval * 86400000).toISOString(),
+    lastReviewed: now.toISOString(),
+  };
+}
+
+function prepareQueue(cards) {
+  const now = Date.now();
+  return [...cards].sort((a, b) => {
+    const aDue = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+    const bDue = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+    const aIsDue = aDue > 0 && aDue <= now;
+    const bIsDue = bDue > 0 && bDue <= now;
+    if (aIsDue !== bIsDue) return aIsDue ? -1 : 1;
+    if (aIsDue && bIsDue) return aDue - bDue;
+    return Number(a.reps || 0) - Number(b.reps || 0);
+  });
+}
+
+function formatDuration(seconds) {
+  const total = Math.max(0, Math.floor(seconds));
+  const minutes = Math.floor(total / 60);
+  const secs = total % 60;
+  return minutes === 0 ? `${secs}s` : `${minutes}min ${String(secs).padStart(2, "0")}s`;
+}
+
+const minimalHeaderStyle = {
+  background: "transparent",
+  borderBottom: 0,
+  boxShadow: "none",
+  position: "absolute",
+  top: 0,
+  left: 0,
+  right: 0,
+  zIndex: 5,
+  padding: "14px 20px",
+};
+
+export default function StudySession({ user, deck, cards = [], onExit, onHelp }) {
+  const queue = useMemo(() => prepareQueue(cards), [cards]);
+  const [index, setIndex] = useState(0);
+  const [revealed, setRevealed] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [finished, setFinished] = useState(false);
+  const [sessionStartedAt, setSessionStartedAt] = useState(() => Date.now());
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [sessionGrades, setSessionGrades] = useState({ hard: 0, good: 0, easy: 0 });
+  const [feedback, setFeedback] = useState(null);
+  const [feedbackReason, setFeedbackReason] = useState("");
+  const [feedbackComment, setFeedbackComment] = useState("");
+  const [feedbackStatus, setFeedbackStatus] = useState("");
+  const [reportStatus, setReportStatus] = useState("");
+  const [reportSending, setReportSending] = useState(false);
+
+  const card = queue[index];
+  const isEmpty = queue.length === 0;
+  const progress = queue.length ? Math.round(((index + 1) / queue.length) * 100) : 0;
+  const totalAnswered = sessionGrades.hard + sessionGrades.good + sessionGrades.easy;
+
+  useEffect(() => {
+    const started = Date.now();
+    setIndex(0);
+    setRevealed(false);
+    setFinished(false);
+    setSessionStartedAt(started);
+    setElapsedSeconds(0);
+    setSessionGrades({ hard: 0, good: 0, easy: 0 });
+    setFeedback(null);
+    setFeedbackReason("");
+    setFeedbackComment("");
+    setFeedbackStatus("");
+    setReportStatus("");
+    setReportSending(false);
+  }, [cards]);
+
+  useEffect(() => {
+    if (finished || isEmpty) return undefined;
+    const timer = window.setInterval(() => setElapsedSeconds(Math.floor((Date.now() - sessionStartedAt) / 1000)), 1000);
+    return () => window.clearInterval(timer);
+  }, [finished, isEmpty, sessionStartedAt]);
+
+  function resetFeedback() {
+    setFeedback(null);
+    setFeedbackReason("");
+    setFeedbackComment("");
+    setFeedbackStatus("");
+  }
+
+  function revealCard() {
+    if (!card || saving || finished || reportSending) return;
+    setRevealed(value => !value);
+  }
+
+  useEffect(() => {
+    function handleKeyDown(event) {
+      if (event.ctrlKey || event.altKey || event.metaKey) return;
+      const target = event.target;
+      const isTyping = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target?.isContentEditable;
+      if (isTyping) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        if (!saving && !reportSending) onExit?.();
+        return;
+      }
+      if (event.key === " " || event.key === "Enter") {
+        event.preventDefault();
+        revealCard();
+        return;
+      }
+      if (revealed && !saving && !reportSending) {
+        if (event.key === "1") {
+          event.preventDefault();
+          gradeCard("hard");
+        } else if (event.key === "2") {
+          event.preventDefault();
+          gradeCard("good");
+        } else if (event.key === "3") {
+          event.preventDefault();
+          gradeCard("easy");
+        }
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [revealed, saving, reportSending, card, onExit]);
+
+  async function gradeCard(grade) {
+    if (!card || saving || !user || !revealed || reportSending) return;
+    setSaving(true);
+    setFeedbackStatus("");
+    try {
+      const srs = calculateSrs(card, grade);
+      await saveCardProgress(user.uid, card.id, {
+        reviewed: true,
+        grade,
+        deckId: deck?.id || card.deckId || null,
+        ...srs,
+      });
+      setSessionGrades(current => ({ ...current, [grade]: current[grade] + 1 }));
+      resetFeedback();
+      setReportStatus("");
+      if (index >= queue.length - 1) {
+        setElapsedSeconds(Math.floor((Date.now() - sessionStartedAt) / 1000));
+        setFinished(true);
+      } else {
+        setIndex(value => value + 1);
+        setRevealed(false);
+      }
+    } catch (error) {
+      setFeedbackStatus(error?.message || "Não foi possível salvar seu progresso.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function sendFeedback(rating) {
+    if (!card || !user || reportSending) return;
+    setFeedback(rating);
+    if (rating === "down") return;
+    setFeedbackStatus("Salvando feedback...");
+    try {
+      const result = await saveCardFeedback({ userId: user.uid, card, rating: "positive" });
+      setFeedbackStatus(result.persisted ? "Feedback salvo." : "Não foi possível sincronizar agora.");
+    } catch {
+      setFeedbackStatus("Não foi possível sincronizar agora.");
+    }
+  }
+
+  async function sendNegativeFeedback() {
+    if (!card || !feedbackReason || !user || reportSending) return;
+    setFeedbackStatus("Salvando feedback...");
+    try {
+      const result = await saveCardFeedback({ userId: user.uid, card, rating: "negative", reason: feedbackReason, comment: feedbackComment });
+      setFeedbackStatus(result.persisted ? "Obrigado pelo feedback." : "Não foi possível sincronizar agora.");
+      setFeedback("down-sent");
+    } catch {
+      setFeedbackStatus("Não foi possível sincronizar agora.");
+    }
+  }
+
+  async function reportCurrentCard() {
+    if (!card || !user || reportSending) return;
+    setReportSending(true);
+    setReportStatus("Enviando relato...");
+    try {
+      const result = await saveCardFeedback({
+        userId: user.uid,
+        card,
+        rating: "problem",
+        reason: "Card com problema",
+        comment: "Relatado durante a sessão de estudo.",
+        context: {
+          reportType: "study_card_problem",
+          deckId: deck?.id || card.deckId || null,
+          deckTitle: deck?.title || null,
+          cardFront: card.front || null,
+          cardBack: card.back || null,
+          cardExplanation: card.explanation || null,
+          cardCuriosity: card.curiosity || null,
+          cardPosition: index + 1,
+          totalCards: queue.length,
+          studyProgressPercent: progress,
+          cardRevealed: revealed,
+          sessionElapsedSeconds: Math.floor((Date.now() - sessionStartedAt) / 1000),
+          clientReportedAt: new Date().toISOString(),
+          pagePath: window.location.pathname,
+          pageHash: window.location.hash || null,
+        },
+      });
+      setReportStatus(result.persisted ? "✓ Problema relatado. Obrigado!" : "Não foi possível sincronizar o relato agora.");
+    } catch {
+      setReportStatus("Não foi possível enviar o relato agora. Tente novamente.");
+    } finally {
+      setReportSending(false);
+    }
+  }
+
+  if (finished) return <main className="study-shell study-complete"><header className="study-topbar" style={minimalHeaderStyle}><button className="study-exit" onClick={onExit}><ArrowLeft size={18} /> Sair do estudo</button></header><section className="study-complete-card"><div className="complete-icon"><Check size={34} /></div><span className="study-kicker">Sessão concluída</span><h1>Ótimo trabalho!</h1><p>Seu progresso foi salvo. Veja o resumo desta sessão antes de voltar para seus baralhos.</p><div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, margin: "22px 0" }}><div className="complete-stat"><strong>{totalAnswered}</strong><small>estudados</small></div><div className="complete-stat"><strong>{sessionGrades.hard}</strong><small>difíceis</small></div><div className="complete-stat"><strong>{sessionGrades.good}</strong><small>bons</small></div><div className="complete-stat"><strong>{sessionGrades.easy}</strong><small>fáceis</small></div></div><div className="study-time">Tempo de estudo: <strong>{formatDuration(elapsedSeconds)}</strong></div><button className="primary" onClick={onExit}>Voltar para meus baralhos</button></section></main>;
+
+  if (isEmpty) return <main className="study-shell study-complete"><header className="study-topbar" style={minimalHeaderStyle}><button className="study-exit" onClick={onExit}><ArrowLeft size={18} /> Sair do estudo</button></header><section className="study-complete-card"><div className="complete-icon empty"><Clock3 size={32} /></div><span className="study-kicker">Nenhum card disponível</span><h1>Não há cards para estudar.</h1><p>Este baralho ainda não possui cards disponíveis para esta sessão.</p><button className="primary" onClick={onExit}>Voltar para meus baralhos</button></section></main>;
+
+  return <main className="study-shell"><header className="study-topbar" style={minimalHeaderStyle}><button className="study-exit" onClick={onExit} disabled={saving || reportSending}><ArrowLeft size={18} /> Sair do estudo</button></header><div className="study-progress-line"><div style={{ width: `${Math.max(4, progress)}%` }} /></div><section className="study-stage"><article className={revealed ? "study-card revealed" : "study-card"} onClick={revealCard} role="button" tabIndex={0} aria-label={revealed ? "Virar o card" : "Mostrar resposta"} onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); revealCard(); } }}><div className="study-card-inner"><span className="study-card-label">{revealed ? "RESPOSTA" : "PERGUNTA"}</span><h1>{revealed ? card.back : card.front}</h1>{revealed && <div className="study-card-extra">{card.explanation && <div><strong>📘 Explicação</strong><p>{String(card.explanation).replace(/^\s*Explicação\s*:\s*/i, "")}</p></div>}{card.curiosity && <div><strong>💡 Curiosidade</strong><p>{card.curiosity}</p></div>}</div>}</div></article><div className="study-actions">{!revealed ? <div className="study-hint">Responda mentalmente antes de revelar.</div> : <><div className="rating-title">Como você se saiu?</div><div className="rating-actions"><button className="rating rating-hard" onClick={event => { event.stopPropagation(); gradeCard("hard"); }} disabled={saving || reportSending}><RotateCcw size={18} /><span><strong>Difícil</strong><small>Revisar logo</small></span></button><button className="rating rating-good" onClick={event => { event.stopPropagation(); gradeCard("good"); }} disabled={saving || reportSending}><Clock3 size={18} /><span><strong>Bom</strong><small>Revisar depois</small></span></button><button className="rating rating-easy" onClick={event => { event.stopPropagation(); gradeCard("easy"); }} disabled={saving || reportSending}><ThumbsUp size={18} /><span><strong>Fácil</strong><small>Intervalo maior</small></span></button></div></>}</div><div className="study-feedback"><span>Qualidade do conteúdo</span><button className={feedback === "up" ? "content-feedback active" : "content-feedback"} onClick={event => { event.stopPropagation(); sendFeedback("up"); }} disabled={reportSending}><ThumbsUp size={15} /> Gostei</button><button className={feedback === "down" || feedback === "down-sent" ? "content-feedback active negative" : "content-feedback"} onClick={event => { event.stopPropagation(); sendFeedback("down"); }} disabled={reportSending}><ThumbsDown size={15} /> Precisa melhorar</button></div><div className="study-report-row"><button type="button" className="study-report-button" onClick={event => { event.stopPropagation(); reportCurrentCard(); }} disabled={reportSending}><Flag size={16} /> <span>{reportSending ? "Enviando..." : "Card com problema"}</span></button></div>{reportStatus && <div className="study-status" role="status" aria-live="polite">{reportStatus}</div>}{feedback === "down" && <div className="feedback-panel"><button className="feedback-close" onClick={() => setFeedback(null)} aria-label="Fechar feedback"><X size={16} /></button><strong>O que precisa melhorar?</strong><div className="reason-list">{REASONS.map(reason => <button key={reason} className={feedbackReason === reason ? "reason selected" : "reason"} onClick={() => setFeedbackReason(reason)}>{reason}</button>)}</div><textarea value={feedbackComment} onChange={event => setFeedbackComment(event.target.value)} placeholder="Comentário opcional..." rows={2} /><button className="primary small" disabled={!feedbackReason || reportSending} onClick={sendNegativeFeedback}>Enviar feedback</button></div>}{feedbackStatus && <div className="study-status">{feedbackStatus}</div>}</section></main>;
 }
