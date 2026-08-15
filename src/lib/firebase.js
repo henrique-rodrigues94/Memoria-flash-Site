@@ -6,13 +6,17 @@ import {
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
+// A configuração do Firebase Web não é um segredo: ela identifica o projeto.
+// Mantemos suporte às variáveis VITE_* para ambientes personalizados, mas
+// usamos a configuração oficial do projeto em produção para que o site
+// também funcione quando o Hosting não injeta variáveis de ambiente.
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAaRwF97HfsJFy37Y8T5Wethsv5eye7df0",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "flashcardsia-a2f43.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "flashcardsia-a2f43",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "flashcardsia-a2f43.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "773874565537",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:773874565537:web:1cd3a96a3fc6939c4fcbe0",
 };
 
 const hasConfig = Object.values(firebaseConfig).every(Boolean);
