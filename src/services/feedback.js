@@ -11,6 +11,7 @@ export async function saveCardFeedback({
   rating,
   reason = "",
   comment = "",
+  context = {},
 }) {
   if (!firebaseConfigured || !db || !userId) {
     return { persisted: false };
@@ -29,6 +30,7 @@ export async function saveCardFeedback({
     subtopicId: card.subtopicId || null,
     subtopic: card.subtopic || null,
     difficulty: card.difficulty || null,
+    ...context,
     agentProcessed: false,
     createdAt: serverTimestamp(),
   });
