@@ -6,10 +6,10 @@ Branch: `main`
 
 ## Funcionamento
 
-O site tem duas camadas:
+O site é um **SPA de estudo** com login obrigatório:
 
-1. **Página pública** (`index.html`): landing page com SEO, FAQ e orientação de login — sem conteúdo pessoal.
-2. **Área privada** (React em `src/main.jsx`): liberada após login com Google, onde ficam a home, a biblioteca de baralhos, a sessão de estudo e o progresso.
+1. **Tela de login** (React em `src/main.jsx`): landing com botão **Entrar com Google** — sem conteúdo pessoal. O acesso à área de estudos exige autenticação.
+2. **Área privada**: liberada após login com Google, com as abas **Início**, **Biblioteca**, **Progresso** e **Ajuda**.
 
 A **criação e geração de baralhos e cards acontece no aplicativo mobile**; o site consome os conteúdos já sincronizados.
 
@@ -19,6 +19,7 @@ A **criação e geração de baralhos e cards acontece no aplicativo mobile**; o
 - Vite
 - Firebase SDK (Auth + Firestore)
 - Firebase Hosting
+- GitHub Actions (CI — valida o build em `main`)
 
 ## Rodar localmente
 
@@ -32,6 +33,10 @@ npm run dev
 ```bash
 npm run build
 ```
+
+## CI — GitHub Actions
+
+O workflow `.github/workflows/build.yml` roda `npm ci && npm run build` a cada **push ou pull request** para a branch `main`. Ele valida que o site continua compilando antes do deploy.
 
 ## Deploy — Firebase Hosting
 
@@ -55,22 +60,25 @@ O `firebase.json` aponta para a pasta `dist` com rewrites para SPA (toda rota ca
 ### Checklist pós-deploy
 
 1. **Domínio autorizado**: adicione `flashcardsia-a2f43.web.app` (e qualquer domínio customizado) em Firebase Console → Authentication → Settings → **Authorized domains**.
-2. **Regras do Firestore**: revise as regras para permitir que usuários autenticados leiam/criem seus próprios decks (coleção `decks`).
-3. **AdSense**: preencha os slots no `.env` com os IDs aprovados pelo Google para ativar a publicidade.
+2. **Regras do Firestore**: revise as regras para permitir que usuários autenticados leiam seus decks (coleção `decks`) e criem documentos em `supportRequests`.
 
 ## Estrutura do projeto
 
 ```text
-index.html                  # página pública (landing) + carrega o app React
+index.html                  # carrega o app React (body já inicia em modo app)
 library.css                 # estilos da biblioteca de baralhos
+.github/
+└── workflows/
+    └── build.yml           # CI: npm ci + npm run build em pushes/PRs para main
 public/
-├── help.css / help.js      # central de ajuda e feedback
+├── help.css / help.js      # ajuda (legado — o fluxo atual usa HelpPage + Firestore)
 ├── login.css / login.js    # orientação do fluxo de login Google
 ├── progress.css            # estilos da tela de progresso
-├── study-first.css         # estilos de estudo
+├── study-first.css         # estilos de estudo (legado)
 └── robots.txt              # indexação (bloqueia /src/ e /node_modules/)
 src/
 ├── components/
+│   ├── HelpPage.jsx        # página de Ajuda e feedback (envia para o Firestore)
 │   └── StudySession.jsx    # sessão de estudo imersiva (SRS + feedback)
 ├── lib/
 │   └── firebase.js         # inicialização do Firebase (Auth + Firestore)
@@ -78,15 +86,18 @@ src/
 │   ├── decks.js            # sincronização de baralhos do usuário
 │   ├── feedback.js         # feedback de cards
 │   ├── progress.js         # progresso/revisão de cards
+│   ├── support.js          # envio de solicitações de suporte (supportRequests)
 │   ├── auth.js             # autenticação (legado — centralizada no main.jsx)
 │   ├── content.js          # leitura de conteúdo do schema oficial (legado)
 │   └── generation.js       # geração por IA (legado, não usado)
-├── main.jsx                # app privado (login, home, biblioteca, estudo, progresso)
+├── main.jsx                # app (login Google, home, biblioteca, estudo, progresso, ajuda)
+├── help.css                # estilos da página de Ajuda
 ├── styles.css              # estilos gerais
+├── study-ui.css            # estilos da nova interface de estudo
 └── study.css               # estilos da sessão de estudo
 ```
 
-> A área privada é renderizada de forma **monolítica** em `src/main.jsx`. Apenas `decks.js`, `feedback.js` e `progress.js` são usados ativamente; `auth.js`, `content.js` e `generation.js` permanecem como legado.
+> A área privada é renderizada de forma **monolítica** em `src/main.jsx`. Apenas `decks.js`, `feedback.js`, `progress.js` e `support.js` são usados ativamente; `auth.js`, `content.js` e `generation.js` permanecem como legado.
 
 ## Variáveis de ambiente
 
@@ -107,8 +118,9 @@ Variáveis disponíveis:
 - `VITE_FIREBASE_MESSAGING_SENDER_ID`
 - `VITE_FIREBASE_APP_ID`
 - `VITE_API_URL` — URL do backend (apenas legado, usado por `generation.js`; dev: `http://localhost:3000`).
-- `VITE_ADSENSE_CLIENT` — `ca-pub-...` do AdSense.
-- `VITE_ADSENSE_HOME_SLOT`, `VITE_ADSENSE_LIBRARY_SLOT`, `VITE_ADSENSE_STUDY_SLOT`, `VITE_ADSENSE_GENERATE_SLOT`, `VITE_ADSENSE_STATS_SLOT` — slots de anúncio por página (deixe vazios até a aprovação do Google).
+- `VITE_ADSENSE_*` — variáveis do Google AdSense (definidas apenas no `.env.example`; não há integração ativa no código no momento).
+
+> **Configuração em produção:** `src/lib/firebase.js` usa a configuração oficial do projeto `flashcardsia-a2f43` como fallback quando as variáveis `VITE_*` não estão definidas. Assim, o site funciona mesmo quando o Hosting não injeta variáveis de ambiente. A configuração do Firebase Web não é um segredo: ela identifica o projeto.
 
 ## Camada Firestore
 
@@ -125,6 +137,8 @@ cards[]
 ```
 
 No entanto, o site atual **estuda a partir da coleção `decks`** (baralhos do usuário sincronizados), não de `curricula`/`cardBuckets`. O arquivo `src/services/content.js` contém a leitura do schema de conteúdo (cálculo de SHA-1, `getDoc()` direto), mas é **legado** — não é importado por nenhum arquivo ativo.
+
+As solicitações de suporte/feedback enviadas pelo site vão para a coleção **`supportRequests`** (via `src/services/support.js`).
 
 ## Correção do login Google
 
@@ -174,9 +188,16 @@ A sessão de estudo (`src/components/StudySession.jsx`) implementa um sistema de
 - Botões **Difícil / Bom / Fácil** com cálculo de intervalo, fator de facilidade (SM-2 simplificado) e nova `dueDate`.
 - Salva o progresso via `saveCardProgress` (`src/services/progress.js`).
 - Permite feedback por card via `saveCardFeedback` (`src/services/feedback.js`).
+- Permite **relatar um card com problema** direto da sessão, enviando o card e o contexto para análise.
+
+## Ajuda e feedback
+
+A aba **Ajuda** (`src/components/HelpPage.jsx`) oferece um formulário de suporte com tipos: card com problema, resposta errada, sugestão, elogio, problema no site ou outro assunto.
+
+O envio usa `submitSupportRequest` (`src/services/support.js`), que grava na coleção **`supportRequests`** do Firestore com o card associado (frente, verso, baralho, matéria/assunto) quando o relato vem de uma sessão de estudo. Não há mais envio por `mailto` (o antigo `public/help.js` é legado).
 
 ## Criação de cards
 
-O site **não cria nem gera cards**: a criação e a geração de conteúdo acontecem no aplicativo mobile. A aba de **criação manual** (`src/main.jsx` → `tab==="generate"`) existe no código, mas **não aparece na navegação** (Início, Meus baralhos, Progresso) — é inacessível pela interface.
+O site **não cria nem gera cards**: a criação e a geração de conteúdo acontecem no aplicativo mobile. A navegação da área privada tem apenas **Início**, **Biblioteca**, **Progresso** e **Ajuda** — não há interface de criação de cards.
 
-O serviço `src/services/generation.js` (`generateFlashcards` e `getAiStatus`) permanece no repositório apenas como legado — não é importado por nenhum arquivo ativo.
+Os serviços `src/services/generation.js` (`generateFlashcards` e `getAiStatus`) e `createUserDeck` (`decks.js`) permanecem no repositório apenas como legado — não são importados por nenhum arquivo ativo.
