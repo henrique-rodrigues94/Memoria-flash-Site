@@ -43,6 +43,7 @@ body.app-mode #public-site{display:none!important}body.app-mode #root{display:bl
   window.addEventListener('unhandledrejection',()=>showFallback('Ocorreu um erro ao iniciar o aplicativo. Atualize a página e tente novamente.'));
 })();
 </script>
+<script type="module">import { createRoot } from "react-dom/client"; globalThis.createRoot = createRoot;</script>
 <script type="module" src="/src/main.jsx"></script>
 <script src="/login.js" defer></script>
 <script src="/help.js" defer></script>
